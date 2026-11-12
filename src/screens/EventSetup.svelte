@@ -173,7 +173,7 @@
                 {#each f.placements as _, i (i)}<i style="flex:1"></i>{/each}
               </span>
               <span class="fmt-name">{f.name}</span>
-              <span class="fmt-cm">{formatCm(f.unitCm)}</span>
+              <span class="fmt-cm mono">{formatCm(f.unitCm)}</span>
               <span class="fmt-hint">{f.hint}</span>
             </button>
           {/each}
@@ -183,15 +183,16 @@
       <div class="field">
         <span>Moldura</span>
         <div class="frame-box">
+          <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
           <div class="frame-preview" class:wide={spec.landscape}>
             <UnitPreview class="fp" format={ev.format} windows={ev.windows} frame={ev.frame} eventName={ev.name} accent={ev.accent} resolution={0.3} />
             {#if analyzing}<div class="scanning"><span></span></div>{/if}
           </div>
           <div class="frame-side">
             <p class="spec">
-              Arquivo da moldura
+              <span class="muted small">Arquivo da moldura</span>
               <strong>{formatPx(spec.unitPx)}</strong>
-              <span class="muted small">{formatCm(spec.unitCm)} a 300 dpi, PNG RGB</span>
+              <span class="mono muted">{formatCm(spec.unitCm)} / 300 dpi / PNG RGB</span>
             </p>
             <input bind:this={fileInput} type="file" accept="image/png" hidden onchange={pickFrame} />
             <button class="btn btn-ghost" onclick={() => fileInput.click()}>
@@ -232,7 +233,7 @@
       </div>
 
       <div class="group">
-        <h2 class="group-title">Captura</h2>
+        <h2 class="title-lg">Captura</h2>
         <div class="field">
           <span>Contagem antes de cada foto</span>
           <Segmented label="Contagem" bind:value={ev.countdown} options={[{ value: 3, label: '3 s' }, { value: 5, label: '5 s' }, { value: 7, label: '7 s' }]} />
@@ -254,7 +255,7 @@
       </div>
 
       <div class="group">
-        <h2 class="group-title">Entrega</h2>
+        <h2 class="title-lg">Entrega</h2>
         <div class="field">
           <span>Filtro inicial</span>
           <Segmented label="Filtro inicial" bind:value={ev.filter} options={FILTERS.map((f) => ({ value: f.id, label: f.name }))} />
@@ -301,34 +302,34 @@
 <style>
   .form {
     display: grid;
-    gap: 24px;
-    padding: 8px 16px 32px;
+    gap: 32px;
+    padding: 8px 16px 40px;
   }
   .big {
-    font-size: 19px;
-    min-height: 56px;
+    font-size: 20px;
+    min-height: 64px;
   }
   .swatches {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px;
   }
   .sw {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
-    transition: transform 0.2s var(--ease-spring);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    transition: transform 0.3s var(--ease-spring), box-shadow 0.2s var(--ease-out);
     position: relative;
   }
   .sw.on {
-    transform: scale(1.08);
-    box-shadow: 0 0 0 3px var(--graphite), 0 0 0 5px var(--text);
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px var(--graphite), 0 0 0 5px var(--text), 0 0 24px rgba(var(--accent-rgb), 0.5);
   }
   .custom {
     display: grid;
     place-items: center;
-    background: conic-gradient(#ff5a36, #ffc531, #3ddc97, #33b6ff, #7a6cff, #ff4fa3, #ff5a36);
+    background: conic-gradient(#ff5e1f, #ffc531, #3ddc97, #33b6ff, #7a6cff, #ff4fa3, #ff5e1f);
     color: #fff;
     cursor: pointer;
   }
@@ -342,79 +343,110 @@
   .formats {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    border-radius: var(--r-xs);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    overflow: hidden;
+    background: var(--veil);
   }
   .fmt {
+    position: relative;
     display: grid;
     grid-template-rows: 64px auto auto auto;
     justify-items: start;
-    gap: 2px;
+    align-content: start;
+    gap: 4px;
     padding: 16px;
-    border-radius: var(--r-md);
     text-align: left;
-    background: var(--panel-solid);
-    box-shadow: inset 0 0 0 1px var(--line);
-    transition: box-shadow 0.2s, transform 0.2s var(--ease-out);
+    transition: background 0.2s var(--ease-out);
   }
-  .fmt:active {
-    transform: scale(0.97);
+  .fmt:nth-child(even) {
+    border-left: 1px solid var(--line-strong);
+  }
+  .fmt:nth-child(n + 3) {
+    border-top: 1px solid var(--line-strong);
+  }
+  .fmt::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.3s var(--ease-out);
   }
   .fmt.on {
-    box-shadow: inset 0 0 0 2px var(--accent);
+    background: rgba(var(--accent-rgb), 0.12);
+  }
+  .fmt.on::after {
+    transform: scaleX(1);
   }
   .sheet {
     align-self: center;
-    height: 56px;
+    height: 48px;
     display: flex;
     gap: 2px;
-    padding: 4px;
-    background: var(--paper);
-    border-radius: 2px;
+    padding: 2px;
+    background: #fff;
     margin-bottom: 8px;
+    box-shadow: var(--drop-sm);
   }
   .sheet i {
-    background: #d9d5cc;
+    background: #e4e4e2;
+    transition: background 0.2s var(--ease-out);
   }
   .fmt.on .sheet i {
     background: var(--accent);
   }
   .fmt-name {
-    font-weight: 680;
-    font-size: 17px;
+    font-weight: 500;
+    font-size: 18px;
+    letter-spacing: -0.025em;
   }
   .fmt-cm {
-    font-size: 14px;
+    color: var(--text);
   }
   .fmt-hint {
-    font-size: 12.5px;
+    font-size: 13px;
     color: var(--muted);
-    line-height: 1.25;
+    line-height: 1.2;
   }
   .frame-box {
+    position: relative;
     display: flex;
     gap: 16px;
     align-items: center;
-    padding: 16px;
-    border-radius: var(--r-lg);
-    background: #101114;
-    box-shadow: inset 0 0 0 1px var(--line);
+    padding: 24px;
+    border: 1px dashed rgba(var(--accent-rgb), 0.6);
+    background: rgba(var(--accent-rgb), 0.03);
   }
+  .c {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 0 solid var(--accent);
+  }
+  .tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; }
+  .tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; }
+  .bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
+  .br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
   .frame-preview {
     position: relative;
     flex: none;
-    width: 42%;
+    width: 40%;
     max-width: 176px;
     display: grid;
     place-items: center;
   }
   .frame-preview.wide {
-    width: 50%;
+    width: 48%;
     max-width: 232px;
   }
   .frame-preview :global(.fp) {
     width: 100%;
     height: auto;
-    box-shadow: 0 14px 28px -8px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 4px 100px rgba(var(--accent-rgb), 0.22), 0 2px 12px rgba(0, 0, 0, 0.3), var(--drop-lg);
   }
   .scanning {
     position: absolute;
@@ -425,53 +457,57 @@
     position: absolute;
     left: 0;
     right: 0;
-    height: 30%;
+    height: 32%;
     background: linear-gradient(transparent, rgba(var(--accent-rgb), 0.5), transparent);
     animation: scan 0.9s var(--ease-out) infinite;
   }
   @keyframes scan {
     from { transform: translateY(-100%); }
-    to { transform: translateY(340%); }
+    to { transform: translateY(320%); }
   }
   .frame-side {
     flex: 1;
     display: grid;
-    gap: 12px;
+    gap: 16px;
     justify-items: start;
   }
   .spec {
     display: grid;
-    gap: 2px;
-    font-size: 14px;
-    color: var(--muted);
+    gap: 4px;
   }
   .spec strong {
-    color: var(--text);
-    font-size: 18px;
-    font-weight: 680;
+    font-size: 24px;
+    letter-spacing: -0.03em;
+  }
+  .frame-side .btn {
+    min-height: 48px;
+    padding: 0 16px;
   }
   .link {
     color: var(--muted);
     text-decoration: underline;
-    text-underline-offset: 3px;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 4px;
     font-size: 14px;
     min-height: 48px;
   }
   .report {
     display: flex;
-    gap: 8px;
-    padding: 12px 16px;
-    border-radius: var(--r-md);
-    background: rgba(79, 209, 139, 0.1);
+    gap: 12px;
+    padding: 16px;
+    border-radius: var(--r-xs);
+    box-shadow: inset 0 0 0 1px rgba(63, 214, 143, 0.3);
+    background: rgba(63, 214, 143, 0.06);
     font-size: 15px;
+    line-height: 1.4;
   }
   .report :global(svg) {
     flex: none;
-    margin-top: 2px;
     color: var(--ok);
   }
   .report.warn {
-    background: rgba(255, 197, 49, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(255, 197, 49, 0.3);
+    background: rgba(255, 197, 49, 0.06);
   }
   .report.warn :global(svg) {
     color: #ffc531;
@@ -484,55 +520,54 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 16px;
   }
   .stepper {
     display: flex;
-    gap: 4px;
+    gap: 8px;
   }
   .stepper button {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    font-weight: 700;
-    font-size: 17px;
-    background: var(--panel-solid);
-    box-shadow: inset 0 0 0 1px var(--line);
+    font-weight: 500;
+    font-size: 18px;
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    transition: background 0.2s var(--ease-out), color 0.2s;
   }
   .stepper button.on {
     background: var(--accent);
     color: var(--on-accent);
-    box-shadow: none;
+    box-shadow: var(--glass);
   }
   .wide {
     width: 100%;
   }
   .group {
     display: grid;
-    gap: 16px;
-    padding-top: 22px;
-    border-top: 1px solid var(--line);
-  }
-  .group-title {
-    font-size: 24px;
-    font-weight: 740;
-    font-stretch: 80%;
+    gap: 24px;
+    padding-top: 32px;
+    border-top: 1px dashed var(--line-strong);
   }
   .toggles {
     display: grid;
   }
+  .toggles > :global(* + *) {
+    border-top: 1px solid var(--line);
+  }
   .danger {
-    padding-top: 12px;
+    padding-top: 16px;
   }
   .dock {
     display: flex;
     gap: 8px;
-    padding: 12px 16px calc(var(--safe-bottom) + 16px);
-    background: var(--graphite);
-    box-shadow: 0 -1px 0 var(--line);
+    padding: 16px 16px calc(var(--safe-bottom) + 16px);
+    background: var(--veil-strong);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line);
   }
   .grow {
     flex: 1;
-    min-height: 56px;
   }
 </style>

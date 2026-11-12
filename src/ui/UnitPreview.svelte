@@ -74,7 +74,7 @@
         const cx = (w.x + w.w / 2) * s;
         const cy = (w.y + w.h / 2) * s;
         const size = Math.min(w.w, w.h) * s * 0.42;
-        ctx.font = `760 ${size}px "Bricolage Grotesque Variable", sans-serif`;
+        ctx.font = `500 ${size}px "Host Grotesk Variable", sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = i === highlight ? accent : 'rgba(28,27,25,0.28)';

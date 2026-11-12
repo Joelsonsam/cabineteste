@@ -67,7 +67,7 @@
     </div>
   </div>
 
-  <div class="sheet-panel" in:fly={{ y: 80, duration: 380, delay: 80 }}>
+  <div class="sheet-panel bottom-sheet" in:fly={{ y: 80, duration: 380, delay: 80 }}>
     <div class="poses" aria-label="Refazer uma pose">
       {#each photos as _, i (i)}
         <button class="pose" onclick={() => onretakeOne(i)} aria-label="Refazer pose {i + 1}">
@@ -103,20 +103,24 @@
     display: flex;
     flex-direction: column;
     background:
-      radial-gradient(120% 70% at 50% 30%, rgba(var(--accent-rgb), 0.12), transparent 60%),
-      var(--graphite);
+      radial-gradient(90% 60% at 50% 38%, rgba(var(--accent-rgb), 0.16), transparent 70%),
+      #121212;
     padding-top: calc(var(--safe-top) + 64px);
     z-index: 5;
   }
   .proof-area {
     flex: 1;
     min-height: 0;
-    margin: 12px 32px 24px;
+    margin: 16px 32px 24px;
     display: grid;
     place-items: center;
   }
   .proof {
-    transform: rotate(-1.2deg);
+    transform: rotate(-1.5deg);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.04),
+      0 4px 100px rgba(var(--accent-rgb), 0.25),
+      0 24px 48px -16px rgba(0, 0, 0, 0.8);
   }
   .proof :global(.proof-canvas) {
     width: 100%;
@@ -126,9 +130,6 @@
     display: grid;
     gap: 16px;
     padding: 16px 16px calc(var(--safe-bottom) + 16px);
-    background: var(--panel-solid);
-    border-radius: var(--r-lg) var(--r-lg) 0 0;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
   }
   .poses {
     display: flex;
@@ -139,10 +140,14 @@
     position: relative;
     width: 56px;
     height: 56px;
-    border-radius: 12px;
+    border-radius: var(--r-xs);
     overflow: hidden;
-    background: var(--raised);
     flex: none;
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    transition: transform 0.2s var(--ease-out);
+  }
+  .pose:active {
+    transform: scale(0.94);
   }
   .pose img {
     width: 100%;
@@ -152,10 +157,13 @@
   .pose-n {
     position: absolute;
     left: 4px;
-    top: 2px;
-    font-weight: 760;
-    font-size: 13px;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    top: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 2px;
+    background: rgba(18, 18, 18, 0.8);
   }
   .pose-retake {
     position: absolute;
@@ -166,15 +174,17 @@
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: rgba(23, 24, 28, 0.78);
+    background: rgba(18, 18, 18, 0.8);
   }
   .poses-hint {
-    margin-left: 4px;
-    line-height: 1.2;
+    margin-left: 8px;
+    line-height: 1.3;
   }
   .filters {
     display: flex;
-    gap: 8px;
+    padding: 4px;
+    border-radius: 9999px;
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
   .filters button {
     flex: 1;
@@ -183,26 +193,25 @@
     justify-content: center;
     gap: 8px;
     min-height: 48px;
-    border-radius: 999px;
-    font-weight: 600;
+    border-radius: 9999px;
+    font-weight: 500;
     font-size: 15px;
     color: var(--muted);
-    box-shadow: inset 0 0 0 1px var(--line-strong);
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
   }
   .filters button.on {
     background: var(--text);
-    color: var(--graphite);
-    box-shadow: none;
+    color: #262626;
   }
   .chip-swatch {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #e86a4f, #3d8fd9);
+    background: linear-gradient(135deg, #ff7a4d, #3d8fd9);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   }
   .chip-swatch.pb {
-    background: linear-gradient(135deg, #eee, #333);
+    background: linear-gradient(135deg, #f2f2f2, #3a3a3a);
   }
   .chip-swatch.quente {
     background: linear-gradient(135deg, #ffc56b, #c9562a);
@@ -215,13 +224,12 @@
     flex: 1;
     min-height: 64px;
     font-size: 18px;
-    font-weight: 700;
   }
   .spinner {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    border: 2.5px solid currentColor;
+    border: 2px solid currentColor;
     border-right-color: transparent;
     animation: spin 0.7s linear infinite;
   }

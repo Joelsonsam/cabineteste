@@ -61,7 +61,7 @@
   .fill {
     position: absolute;
     inset: 0;
-    background: rgba(255, 107, 90, 0.3);
+    background: rgba(255, 92, 108, 0.2);
     transform-origin: left;
   }
   .content {

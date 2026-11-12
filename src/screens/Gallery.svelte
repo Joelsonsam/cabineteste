@@ -147,7 +147,7 @@
 
   <div class="summary">
     <strong>{ev.name}</strong>
-    <span class="muted small">
+    <span class="mono muted">
       {items.length} {items.length === 1 ? 'sessão' : 'sessões'}, {prints} {prints === 1 ? 'impressão' : 'impressões'}{items.length ? `, ${formatBytes(total)}` : ''}
     </span>
   </div>
@@ -165,7 +165,7 @@
           <li in:fade={{ duration: 200, delay: Math.min(i, 12) * 25 }}>
             <button class="cell" onclick={() => show(s)}>
               <img src={s.url} alt="Sessão das {time(s.createdAt)}" loading="lazy" />
-              <span class="meta">
+              <span class="meta mono">
                 {time(s.createdAt)}
                 {#if s.prints}<i><Icon name="print" size={16} stroke={2.2} />{s.prints}</i>{/if}
               </span>
@@ -187,7 +187,7 @@
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="backdrop" transition:fade={{ duration: 180 }} onclick={close}></div>
-    <div class="detail" transition:fly={{ y: 60, duration: 300 }}>
+    <div class="detail bottom-sheet" transition:fly={{ y: 60, duration: 300 }}>
       <div class="detail-head">
         <span><strong>{time(open.createdAt)}</strong> <span class="muted">{day(open.createdAt)}</span></span>
         <button class="icon-btn" aria-label="Fechar" onclick={close}><Icon name="close" /></button>
@@ -208,7 +208,7 @@
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="backdrop" transition:fade={{ duration: 180 }} onclick={() => (menu = false)}></div>
-    <div class="detail menu" transition:fly={{ y: 60, duration: 300 }}>
+    <div class="detail menu bottom-sheet" transition:fly={{ y: 60, duration: 300 }}>
       <button class="btn wide" onclick={exportZip}><Icon name="archive" size={20} />Exportar tudo em ZIP</button>
       <p class="muted small">Gera um arquivo com as {items.length} folhas em 300 dpi para enviar ao Drive, WhatsApp ou e-mail.</p>
       <HoldButton onconfirm={clearAll} hint="Segure para limpar"><Icon name="trash" size={20} />Limpar galeria do evento</HoldButton>
@@ -223,8 +223,9 @@
     padding: 0 16px 12px;
   }
   .summary strong {
-    font-size: 17px;
-    font-weight: 660;
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
   }
   .grid {
     list-style: none;
@@ -245,9 +246,9 @@
   .cell img {
     width: 100%;
     aspect-ratio: var(--ar, auto);
-    border-radius: 4px;
+    border-radius: 2px;
     background: var(--paper);
-    box-shadow: 0 8px 18px -6px rgba(0, 0, 0, 0.7);
+    box-shadow: var(--drop-sm);
     transition: transform 0.2s var(--ease-out);
   }
   .cell:active img {
@@ -280,7 +281,7 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--scrim);
     z-index: 20;
   }
   .detail {
@@ -293,7 +294,7 @@
     gap: 16px;
     padding: 16px 16px calc(var(--safe-bottom) + 16px);
     background: var(--panel-solid);
-    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    border-radius: var(--r-md) var(--r-md) 0 0;
     z-index: 21;
   }
   .detail-head {

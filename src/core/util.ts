@@ -1,6 +1,6 @@
 import { detectWindows, type DetectResult } from './frame-detect';
 
-export const ACCENTS = ['#FF5A36', '#FFC531', '#3DDC97', '#33B6FF', '#7A6CFF', '#FF4FA3', '#F4F2EC', '#E2341D'];
+export const ACCENTS = ['#FF5E1F', '#FFC531', '#3DDC97', '#33B6FF', '#7A6CFF', '#FF4FA3', '#F4F2EC', '#E2341D'];
 
 export function hexToRgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '');

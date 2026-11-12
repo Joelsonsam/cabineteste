@@ -165,9 +165,9 @@
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel bottom-sheet">
     {#if sel}
-      <p class="readout">
+      <p class="readout mono">
         <strong>Pose {selected + 1}</strong>
         <span>{sel.w} × {sel.h} px</span>
         <span class="muted">{cm(sel.w)} × {cm(sel.h)} cm</span>
@@ -236,7 +236,7 @@
     position: absolute;
     left: 4px;
     top: 4px;
-    font-weight: 760;
+    font-weight: 500;
     font-size: 15px;
     color: var(--ink);
     background: rgba(244, 242, 236, 0.85);
@@ -265,7 +265,7 @@
     display: grid;
     gap: 12px;
     background: var(--panel-solid);
-    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    border-radius: var(--r-md) var(--r-md) 0 0;
   }
   .readout {
     display: flex;
@@ -276,18 +276,25 @@
   .tools {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
+    border-radius: var(--r-xs);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    overflow: hidden;
   }
   .tool {
     display: grid;
     justify-items: center;
     gap: 4px;
-    padding: 8px 2px;
-    border-radius: var(--r-sm);
-    font-size: 12.5px;
-    font-weight: 560;
-    color: var(--muted);
-    background: rgba(0, 0, 0, 0.2);
+    padding: 12px 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    transition: background 0.2s var(--ease-out);
+  }
+  .tool + .tool {
+    border-left: 1px solid var(--line-strong);
+  }
+  .tool:active {
+    background: var(--press);
   }
   .tool:disabled {
     opacity: 0.35;
@@ -306,10 +313,10 @@
   .nudge button {
     width: 48px;
     height: 48px;
-    border-radius: 12px;
+    border-radius: 9999px;
     display: grid;
     place-items: center;
-    background: rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
   .nudge button span {
     display: inline-flex;
@@ -318,6 +325,6 @@
     flex: 1;
     width: auto;
     font-size: 14px;
-    font-weight: 580;
+    font-weight: 500;
   }
 </style>

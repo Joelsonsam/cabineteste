@@ -16,7 +16,7 @@
 <style>
   .toasts {
     position: fixed;
-    top: calc(var(--safe-top) + 12px);
+    top: calc(var(--safe-top) + 16px);
     left: 0;
     right: 0;
     display: grid;
@@ -30,12 +30,13 @@
     align-items: center;
     gap: 8px;
     max-width: calc(100% - 32px);
-    padding: 12px 16px 12px 16px;
-    border-radius: 999px;
+    padding: 12px 20px 12px 16px;
+    border-radius: 9999px;
     background: var(--panel-solid);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 1px var(--line);
-    font-weight: 580;
+    box-shadow: inset 0 0 0 1px var(--line-strong), var(--drop-lg);
+    font-weight: 500;
     font-size: 15px;
+    letter-spacing: -0.01em;
   }
   .toast.ok :global(svg) {
     color: var(--ok);

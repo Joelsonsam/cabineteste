@@ -9,6 +9,8 @@ export type Route =
   | { name: 'gallery' }
   | { name: 'settings' };
 
+export type ThemePref = 'auto' | 'light' | 'dark';
+
 type Toast = { id: number; text: string; tone: 'ok' | 'error' | 'info' };
 
 export const app = $state({
@@ -17,6 +19,7 @@ export const app = $state({
   events: [] as BoothEvent[],
   activeId: null as string | null,
   sound: true,
+  theme: 'auto' as ThemePref,
   ready: false,
   toasts: [] as Toast[],
 });
@@ -54,6 +57,7 @@ export async function loadAll() {
   app.activeId = await getSetting<string | null>('activeEvent', null);
   if (app.activeId && !app.events.some((e) => e.id === app.activeId)) app.activeId = null;
   app.sound = await getSetting('sound', true);
+  app.theme = await getSetting<ThemePref>('theme', 'auto');
   setSound(app.sound);
   app.ready = true;
 }
@@ -69,12 +73,17 @@ export async function setSoundPref(on: boolean) {
   await setSetting('sound', on);
 }
 
+export async function setThemePref(t: ThemePref) {
+  app.theme = t;
+  await setSetting('theme', t);
+}
+
 export function newEventDraft(): BoothEvent {
   const now = Date.now();
   return {
     id: uid(),
     name: '',
-    accent: '#FF5A36',
+    accent: '#FF5E1F',
     format: 'tirinha',
     frame: null,
     frameName: null,

@@ -103,14 +103,14 @@ function drawDefaultFooter(ctx: Ctx, input: UnitInput, W: number, H: number, s: 
   ctx.fillStyle = INK;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
-  ctx.font = `700 ${size}px "Bricolage Grotesque Variable", system-ui, sans-serif`;
+  ctx.font = `500 ${size}px "Host Grotesk Variable", system-ui, sans-serif`;
   const textX = left + size * 0.45;
   const date = (input.date ?? new Date()).toLocaleDateString('pt-BR');
   const dateSize = size * 0.5;
   const maxName = right - textX - (W > H * 0.6 ? dateSize * 6 : 0);
   ctx.fillText(fit(ctx, input.eventName || 'Mude!', maxName), textX, mid - (W > H * 0.6 ? 0 : size * 0.32));
 
-  ctx.font = `500 ${dateSize}px "Bricolage Grotesque Variable", system-ui, sans-serif`;
+  ctx.font = `500 ${dateSize}px "Host Grotesk Variable", system-ui, sans-serif`;
   ctx.fillStyle = '#6B6760';
   if (W > H * 0.6) {
     ctx.textAlign = 'right';

@@ -50,12 +50,12 @@
       {/if}
     </figure>
     </div>
-    <p class="caption muted small">
+    <p class="caption mono muted">
       Folha {spec.sheetCm[0]} × {spec.sheetCm[1]} cm{spec.copies === 2 ? ', corte no meio' : ''}
     </p>
   </div>
 
-  <div class="panel" in:fly={{ y: 80, duration: 360, delay: 120 }}>
+  <div class="panel bottom-sheet" in:fly={{ y: 80, duration: 360, delay: 120 }}>
     <div class="actions">
       <button class="act primary" onclick={onprint}>
         <span class="act-icon"><Icon name="print" size={24} /></span>
@@ -85,7 +85,9 @@
     inset: 0;
     display: flex;
     flex-direction: column;
-    background: var(--graphite);
+    background:
+      radial-gradient(90% 60% at 50% 36%, rgba(var(--accent-rgb), 0.12), transparent 70%),
+      #121212;
     padding-top: calc(var(--safe-top) + 64px);
     z-index: 6;
   }
@@ -94,8 +96,8 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 12px 32px 16px;
+    gap: 16px;
+    padding: 16px 32px;
   }
   .sheet-fit {
     flex: 1;
@@ -105,6 +107,10 @@
   }
   .sheet {
     position: relative;
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.04),
+      0 4px 100px rgba(var(--accent-rgb), 0.2),
+      0 24px 48px -16px rgba(0, 0, 0, 0.8);
   }
   .sheet img {
     display: block;
@@ -113,10 +119,25 @@
   }
   .cut {
     position: absolute;
-    top: -8px;
-    bottom: -8px;
+    top: -16px;
+    bottom: -16px;
     left: 50%;
-    border-left: 1.5px dashed rgba(var(--accent-rgb), 0.9);
+    border-left: 1px dashed var(--accent);
+  }
+  .cut::before,
+  .cut::after {
+    content: '';
+    position: absolute;
+    left: -4px;
+    width: 8px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .cut::before {
+    top: 0;
+  }
+  .cut::after {
+    bottom: 0;
   }
   .caption {
     text-align: center;
@@ -125,44 +146,53 @@
     display: grid;
     gap: 16px;
     padding: 16px 16px calc(var(--safe-bottom) + 16px);
-    background: var(--panel-solid);
-    border-radius: var(--r-lg) var(--r-lg) 0 0;
   }
   .actions {
     display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: 1.25fr 1fr 1fr;
+    border-radius: var(--r-xs);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    overflow: hidden;
   }
   .act {
     position: relative;
     display: grid;
     justify-items: center;
     gap: 8px;
-    padding: 16px 4px 12px;
-    border-radius: var(--r-md);
-    background: rgba(0, 0, 0, 0.22);
-    font-weight: 600;
-    font-size: 14.5px;
-    transition: transform 0.18s var(--ease-out);
+    padding: 16px 8px;
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    transition: background 0.2s var(--ease-out);
+  }
+  .act + .act {
+    border-left: 1px solid var(--line-strong);
   }
   .act:active {
-    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.04);
   }
   .act:disabled {
-    opacity: 1;
     color: var(--muted);
   }
   .act.primary {
-    background: rgba(var(--accent-rgb), 0.16);
-    box-shadow: inset 0 0 0 1.5px rgba(var(--accent-rgb), 0.6);
+    background: rgba(var(--accent-rgb), 0.12);
+  }
+  .act.primary::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--accent);
   }
   .act em {
     position: absolute;
     top: 8px;
     right: 8px;
     font-style: normal;
-    font-size: 12.5px;
-    font-weight: 700;
+    font-family: var(--mono);
+    font-size: 12px;
     color: var(--accent);
   }
   .act-icon {
@@ -171,19 +201,20 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
   .primary .act-icon {
     background: var(--accent);
     color: var(--on-accent);
+    box-shadow: var(--glass), 0 0 32px rgba(var(--accent-rgb), 0.4);
   }
   .act-icon.done {
-    background: rgba(79, 209, 139, 0.2);
     color: var(--ok);
+    box-shadow: inset 0 0 0 1px rgba(63, 214, 143, 0.4);
+    background: rgba(63, 214, 143, 0.08);
   }
   .next {
     min-height: 64px;
     font-size: 18px;
-    font-weight: 700;
   }
 </style>

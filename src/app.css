@@ -1,36 +1,56 @@
-@import '@fontsource-variable/bricolage-grotesque/standard.css';
+@import '@fontsource-variable/host-grotesk/wght.css';
+@import '@fontsource-variable/geist-mono/wght.css';
+
+:root,
+.force-dark {
+  --graphite: #181818;
+  --panel: rgba(33, 33, 33, 0.78);
+  --panel-solid: #202020;
+  --raised: #2a2a2a;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #f2f2f0;
+  --muted: #9a9a9a;
+  --faint: #727272;
+  --danger: #ff5c6c;
+  --ok: #3fd68f;
+  --veil: rgba(24, 24, 24, 0.72);
+  --veil-strong: rgba(24, 24, 24, 0.92);
+  --tint: rgba(255, 255, 255, 0.03);
+  --press: rgba(255, 255, 255, 0.04);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --drop-sm: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --drop-lg: 0 16px 32px -8px rgba(0, 0, 0, 0.8);
+  --paper-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 24px 48px -16px rgba(0, 0, 0, 0.7), 0 4px 8px rgba(0, 0, 0, 0.3);
+  --knob: #9a9a9a;
+  color-scheme: dark;
+  color: var(--text);
+}
 
 :root {
-  --graphite: #17181c;
-  --panel: rgba(35, 37, 43, 0.82);
-  --panel-solid: #23252b;
-  --raised: #2d3038;
-  --line: rgba(237, 235, 230, 0.1);
-  --line-strong: rgba(237, 235, 230, 0.2);
-  --text: #edebe6;
-  --muted: #9c9a94;
-  --faint: #6b6a66;
-  --paper: #f4f2ec;
-  --ink: #1c1b19;
-  --danger: #ff6b5a;
-  --ok: #4fd18b;
-  --accent: #ff5a36;
-  --accent-rgb: 255, 90, 54;
+  --paper: #ffffff;
+  --ink: #262626;
+  --accent: #ff5e1f;
+  --accent-rgb: 255, 94, 31;
   --on-accent: #ffffff;
+  --glass: inset 1px 6px 6px rgba(255, 255, 255, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 
-  --font: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --font: 'Host Grotesk Variable', system-ui, sans-serif;
+  --mono: 'Geist Mono Variable', ui-monospace, monospace;
+  --r-xs: 4px;
   --r-sm: 8px;
   --r-md: 16px;
   --r-lg: 24px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.19, 1, 0.22, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  color-scheme: dark;
   font-family: var(--font);
   font-size: 16px;
-  line-height: 1.4;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
   color: var(--text);
   background: var(--graphite);
   font-variant-numeric: tabular-nums;
@@ -57,6 +77,7 @@ body,
 
 button {
   font: inherit;
+  letter-spacing: inherit;
   color: inherit;
   background: none;
   border: 0;
@@ -74,28 +95,35 @@ select {
 
 :focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  outline-offset: 4px;
+}
+
+h1,
+h2,
+h3,
+strong {
+  font-weight: 500;
 }
 
 h1,
 h2,
 h3 {
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
+  line-height: 1;
 }
 
 .title-xl {
-  font-size: clamp(30px, 8.5vw, 44px);
-  font-stretch: 80%;
-  font-weight: 760;
-  letter-spacing: -0.02em;
+  font-size: 48px;
+  letter-spacing: -0.025em;
+}
+
+.title-lg {
+  font-size: 32px;
+  letter-spacing: -0.025em;
 }
 
 .title-md {
-  font-size: 21px;
-  font-weight: 680;
-  font-stretch: 88%;
+  font-size: 24px;
+  letter-spacing: -0.02em;
 }
 
 .muted {
@@ -103,7 +131,41 @@ h3 {
 }
 
 .small {
-  font-size: 13.5px;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+.mono {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: -0.02em;
+  line-height: 1.33;
+}
+
+.theme-light {
+  --graphite: #ffffff;
+  --panel: rgba(255, 255, 255, 0.86);
+  --panel-solid: #ffffff;
+  --raised: #f7f7f7;
+  --line: #f0f0f0;
+  --line-strong: #e2e2e2;
+  --text: #262626;
+  --muted: #676767;
+  --faint: #8a8a8a;
+  --danger: #d4183a;
+  --ok: #12a15e;
+  --veil: rgba(255, 255, 255, 0.86);
+  --veil-strong: rgba(255, 255, 255, 0.94);
+  --tint: rgba(38, 38, 38, 0.025);
+  --press: rgba(38, 38, 38, 0.04);
+  --scrim: rgba(38, 38, 38, 0.32);
+  --drop-sm: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --drop-lg: 0 16px 32px -12px rgba(0, 0, 0, 0.2);
+  --paper-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 16px 32px -16px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --knob: #b5b5b5;
+  color-scheme: light;
+  color: var(--text);
+  background: var(--graphite);
 }
 
 .btn {
@@ -113,15 +175,21 @@ h3 {
   gap: 8px;
   min-height: 56px;
   padding: 0 24px;
-  border-radius: 999px;
-  font-weight: 620;
+  border-radius: 9999px;
+  font-weight: 500;
   font-size: 16px;
-  background: var(--raised);
-  transition: transform 0.18s var(--ease-out), background 0.2s, opacity 0.2s;
+  letter-spacing: -0.01em;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  transition:
+    transform 0.2s var(--ease-out),
+    background 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out),
+    opacity 0.2s;
 }
 
 .btn:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
 .btn:disabled {
@@ -132,16 +200,22 @@ h3 {
 .btn-accent {
   background: var(--accent);
   color: var(--on-accent);
+  box-shadow: var(--glass), 0 8px 32px -8px rgba(var(--accent-rgb), 0.5);
 }
 
 .btn-ghost {
   background: transparent;
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.btn-solid {
+  background: var(--text);
+  color: var(--graphite);
+  box-shadow: none;
 }
 
 .btn-danger {
-  background: rgba(255, 107, 90, 0.14);
   color: var(--danger);
+  box-shadow: inset 0 0 0 1px rgba(255, 92, 108, 0.32);
 }
 
 .icon-btn {
@@ -149,15 +223,16 @@ h3 {
   place-items: center;
   width: 48px;
   height: 48px;
-  border-radius: 999px;
+  border-radius: 9999px;
   background: var(--panel);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition: transform 0.18s var(--ease-out);
+  box-shadow: inset 0 0 0 1px var(--line);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: transform 0.2s var(--ease-out), background 0.2s var(--ease-out);
 }
 
 .icon-btn:active {
-  transform: scale(0.9);
+  transform: scale(0.92);
 }
 
 .field {
@@ -167,25 +242,31 @@ h3 {
 
 .field > span {
   font-size: 14px;
+  font-weight: 500;
   color: var(--muted);
-  font-weight: 560;
+  letter-spacing: -0.01em;
 }
 
 .input {
   width: 100%;
   min-height: 56px;
   padding: 0 16px;
-  border-radius: var(--r-md);
+  border-radius: var(--r-sm);
   border: 1px solid var(--line-strong);
-  background: rgba(0, 0, 0, 0.22);
-  font-size: 17px;
-  font-weight: 560;
+  background: var(--tint);
+  font-size: 18px;
+  letter-spacing: -0.02em;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+}
+
+.input::placeholder {
+  color: var(--faint);
 }
 
 .input:focus {
   border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.04);
 }
 
 .screen {
@@ -193,7 +274,24 @@ h3 {
   inset: 0;
   display: flex;
   flex-direction: column;
-  background: var(--graphite);
+  background-color: var(--graphite);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+}
+
+.screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 70% at 50% 0%, transparent 0%, var(--graphite) 75%);
+}
+
+.screen > * {
+  position: relative;
 }
 
 .scroll {
@@ -206,8 +304,8 @@ h3 {
 .topbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: calc(var(--safe-top) + 16px) 16px 8px;
+  gap: 16px;
+  padding: calc(var(--safe-top) + 16px) 16px 16px;
 }
 
 .topbar h1 {
@@ -215,12 +313,39 @@ h3 {
   min-width: 0;
 }
 
+.rule {
+  border: 0;
+  border-top: 1px dashed var(--line-strong);
+}
+
+.card {
+  border-radius: var(--r-xs);
+  background: var(--panel-solid);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.bottom-sheet {
+  background: var(--panel-solid);
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  box-shadow: inset 0 1px 0 var(--line-strong), 0 -16px 48px rgba(0, 0, 0, 0.16);
+}
+
 .paper {
   background: var(--paper);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.5) inset,
-    0 18px 40px -12px rgba(0, 0, 0, 0.6),
-    0 2px 6px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--paper-shadow);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--r-xs);
+  background: rgba(var(--accent-rgb), 0.12);
+  color: color-mix(in srgb, var(--accent) 72%, var(--text));
+  font-size: 13px;
+  font-weight: 500;
 }
 
 @media (prefers-reduced-motion: reduce) {

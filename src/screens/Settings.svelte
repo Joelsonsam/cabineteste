@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { scale } from 'svelte/transition';
-  import { app, back, setSoundPref } from '../state.svelte';
+  import { app, back, setSoundPref, setThemePref, type ThemePref } from '../state.svelte';
+  import Segmented from '../ui/Segmented.svelte';
   import { FORMATS, FORMAT_ORDER, formatCm, formatPx } from '../core/formats';
   import { formatBytes, vibrate } from '../core/util';
   import { clearShareCache, isNative, storageEstimate } from '../platform';
@@ -11,6 +12,11 @@
   let sound = $state(app.sound);
   $effect(() => {
     if (sound !== app.sound) setSoundPref(sound);
+  });
+
+  let theme: ThemePref = $state(app.theme);
+  $effect(() => {
+    if (theme !== app.theme) setThemePref(theme);
   });
 
   let usage: { used: number; quota: number } | null = $state(null);
@@ -41,6 +47,14 @@
   <div class="scroll">
     <div class="body">
       <div class="block">
+        <div class="field">
+          <span>Aparência</span>
+          <Segmented label="Aparência" bind:value={theme} options={[{ value: 'auto', label: 'Automático' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Escuro' }]} />
+          <p class="muted small">A câmera, a revisão e a entrega ficam sempre no escuro para a foto se destacar.</p>
+        </div>
+      </div>
+
+      <div class="block">
         <Toggle bind:checked={sound} label="Sons da contagem e do disparo" />
       </div>
 
@@ -65,8 +79,8 @@
               {@const f = FORMATS[id]}
               <tr>
                 <td>{f.name}{id.startsWith('lembranca') ? (f.landscape ? ' paisagem' : ' retrato') : ''}</td>
-                <td>{formatCm(f.unitCm)}</td>
-                <td>{formatPx(f.unitPx)}</td>
+                <td class="mono">{formatCm(f.unitCm)}</td>
+                <td class="mono">{formatPx(f.unitPx)}</td>
               </tr>
             {/each}
           </tbody>
@@ -74,7 +88,7 @@
       </div>
 
       <div class="block about">
-        <button class="version" onclick={tapVersion}>
+        <button class="version mono" onclick={tapVersion}>
           Cabine Mude! versão 0.1 {isNative ? 'Android' : 'web'}
         </button>
         {#if credit}
@@ -97,13 +111,13 @@
     display: grid;
     gap: 8px;
     padding: 16px;
-    border-radius: var(--r-lg);
+    border-radius: var(--r-xs);
     background: var(--panel-solid);
     box-shadow: inset 0 0 0 1px var(--line);
   }
   .h {
     font-size: 18px;
-    font-weight: 680;
+    font-weight: 500;
   }
   .meter {
     height: 8px;
@@ -124,7 +138,7 @@
   }
   th {
     text-align: left;
-    font-weight: 560;
+    font-weight: 500;
     color: var(--muted);
     padding: 4px 0;
   }
@@ -135,6 +149,8 @@
   td:not(:first-child),
   th:not(:first-child) {
     text-align: right;
+    white-space: nowrap;
+    padding-left: 8px;
   }
   .about {
     background: transparent;

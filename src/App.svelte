@@ -11,7 +11,14 @@
   import Settings from './screens/Settings.svelte';
   import Toasts from './ui/Toasts.svelte';
 
-  const accent = $derived(activeEvent()?.accent ?? '#FF5A36');
+  const accent = $derived(activeEvent()?.accent ?? '#FF5E1F');
+  const media = window.matchMedia('(prefers-color-scheme: light)');
+  let systemLight = $state(media.matches);
+  media.addEventListener('change', (e) => (systemLight = e.matches));
+  const light = $derived(app.theme === 'light' || (app.theme === 'auto' && systemLight));
+  $effect(() => {
+    document.documentElement.style.background = light ? '#ffffff' : '#181818';
+  });
 
   onMount(() => {
     loadAll();
@@ -33,7 +40,7 @@
   });
 </script>
 
-<div class="root" style={accentVars(accent)}>
+<div class="root" class:theme-light={light} style={accentVars(accent)}>
   {#if app.ready}
     {#if app.route.name === 'events'}
       <Events />
