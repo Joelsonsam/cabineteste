@@ -1,6 +1,6 @@
-# Cabine Mude!
+# Cabine Fotos
 
-App de cabine fotográfica offline da Mude! Agência de Live Marketing. Operado pela equipe em um celular Android por evento.
+App de cabine fotográfica offline para estudo. Operado pela equipe em um celular Android por evento.
 
 ## Gerar o APK sem Android Studio
 
