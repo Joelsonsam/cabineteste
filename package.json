@@ -1,0 +1,36 @@
+{
+  "name": "cabine-mude",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "test": "vitest run",
+    "check": "svelte-check --tsconfig ./tsconfig.app.json",
+    "android": "vite build && cap sync android && cap open android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^24.19.2",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.7",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "dexie": "^4.4.7",
+    "fflate": "^0.8.3"
+  },
+  "author": "Joelson Sampaio <joelsonsam@gmail.com>"
+}

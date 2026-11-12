@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cabine Mude!</string>
+    <string name="title_activity_main">Cabine Mude!</string>
+    <string name="package_name">br.com.mude.cabine</string>
+    <string name="custom_url_scheme">br.com.mude.cabine</string>
+</resources>
