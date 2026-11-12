@@ -59,10 +59,10 @@ function spec(
 }
 
 export const FORMATS: Record<FormatId, FormatSpec> = {
-  'lembranca-retrato': spec('lembranca-retrato', 'Foto lembrança', 'Retrato, uma por folha', [10, 15], [10, 15], 1, 4),
-  'lembranca-paisagem': spec('lembranca-paisagem', 'Foto lembrança', 'Paisagem, uma por folha', [15, 10], [15, 10], 1, 4),
-  tirinha: spec('tirinha', 'Tirinha', 'Duas tiras por folha para corte', [5, 15], [10, 15], 2, 4),
-  polaroid: spec('polaroid', 'Polaroid', 'Duas por folha para corte', [7.5, 10], [15, 10], 2, 2),
+  'lembranca-retrato': spec('lembranca-retrato', 'Foto lembrança', 'Vertical, foto única', [10, 15], [10, 15], 1, 1),
+  'lembranca-paisagem': spec('lembranca-paisagem', 'Foto lembrança', 'Horizontal, foto única', [15, 10], [15, 10], 1, 1),
+  tirinha: spec('tirinha', 'Tirinha', 'Duas tiras por folha 10 × 15', [5, 15], [10, 15], 2, 4),
+  polaroid: spec('polaroid', 'Polaroid', 'Foto única, duas por folha 15 × 10', [7.5, 10], [15, 10], 2, 1),
 };
 
 export const FORMAT_ORDER: FormatId[] = ['lembranca-retrato', 'lembranca-paisagem', 'tirinha', 'polaroid'];

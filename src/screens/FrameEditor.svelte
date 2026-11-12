@@ -90,7 +90,7 @@
   }
 
   function add() {
-    if (draft.length >= 6) return;
+    if (draft.length >= spec.maxPoses) return;
     const [W, H] = spec.unitPx;
     const w = Math.round(W * 0.4);
     const h = Math.round(H * 0.25);
@@ -118,7 +118,7 @@
       return;
     }
     busy = true;
-    const res = await analyzeFrame(frame, spec.unitPx);
+    const res = await analyzeFrame(frame, spec.unitPx, spec.maxPoses);
     busy = false;
     if (res.windows.length) {
       draft = res.windows;
@@ -180,7 +180,7 @@
       <button class="tool" onclick={() => shift(1)} disabled={selected === draft.length - 1} aria-label="Trocar com a próxima pose">
         <span class="rot flip"><Icon name="back" /></span>Depois
       </button>
-      <button class="tool" onclick={add} disabled={draft.length >= 6}><Icon name="plus" />Janela</button>
+      <button class="tool" onclick={add} disabled={draft.length >= spec.maxPoses}><Icon name="plus" />Janela</button>
       <button class="tool" onclick={remove} disabled={draft.length <= 1}><Icon name="trash" />Remover</button>
       <button class="tool" onclick={redetect} disabled={busy}><Icon name="wand" />{frame ? 'Detectar' : 'Padrão'}</button>
     </div>

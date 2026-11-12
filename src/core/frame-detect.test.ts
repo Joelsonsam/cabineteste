@@ -42,7 +42,12 @@ describe('detectWindows', () => {
 
   it('ordena grade 2x2 linha a linha', () => {
     const [W, H] = FORMATS['lembranca-paisagem'].unitPx;
-    const holes = defaultWindows('lembranca-paisagem', 4);
+    const holes = [
+      { x: 60, y: 60, w: 800, h: 440 },
+      { x: 910, y: 60, w: 800, h: 440 },
+      { x: 60, y: 540, w: 800, h: 440 },
+      { x: 910, y: 540, w: 800, h: 440 },
+    ];
     const res = detectWindows(frame(W, H, [holes[3], holes[0], holes[2], holes[1]]));
     expect(res.windows.map((w) => [Math.round(w.x / 100), Math.round(w.y / 100)])).toEqual(
       holes.map((w) => [Math.round(w.x / 100), Math.round(w.y / 100)])
@@ -65,6 +70,17 @@ describe('detectWindows', () => {
 
   it('retorna vazio para moldura sem janelas', () => {
     expect(detectWindows(frame(400, 600, [])).windows).toHaveLength(0);
+  });
+});
+
+describe('polaroid', () => {
+  it('detecta a janela única da polaroid 7,5 x 10', () => {
+    const [W, H] = FORMATS.polaroid.unitPx;
+    const holes = defaultWindows('polaroid', 1);
+    const res = detectWindows(frame(W, H, holes), { maxWindows: FORMATS.polaroid.maxPoses });
+    expect(res.windows).toHaveLength(1);
+    expect(FORMATS.polaroid.copies).toBe(2);
+    expect(FORMATS.polaroid.placements[1].x).toBe(FORMATS.polaroid.sheetPx[0] - FORMATS.polaroid.unitPx[0]);
   });
 });
 

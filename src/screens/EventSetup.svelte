@@ -4,7 +4,7 @@
   import { deleteEvent, type BoothEvent } from '../core/db';
   import { FILTERS } from '../core/compose';
   import { FORMATS, FORMAT_ORDER, defaultWindows, formatCm, formatPx, type FormatId } from '../core/formats';
-  import { ACCENTS, accentVars, analyzeFrame } from '../core/util';
+  import { ACCENTS, accentVars, analyzeFrame, cropLeftHalf } from '../core/util';
   import Icon from '../ui/Icon.svelte';
   import Segmented from '../ui/Segmented.svelte';
   import Toggle from '../ui/Toggle.svelte';
@@ -23,12 +23,12 @@
   let analyzing = $state(false);
   let editing = $state(false);
   let fileInput: HTMLInputElement;
-  let poses = $state(existing?.frame ? existing.windows.length : (existing?.windows.length ?? 3));
+  let poses = $state(existing ? existing.windows.length : 3);
 
   async function analyze(blob: Blob) {
     analyzing = true;
     try {
-      report = await analyzeFrame(blob, spec.unitPx);
+      report = await analyzeFrame(blob, spec.unitPx, spec.maxPoses);
       if (report.windows.length) {
         ev.windows = report.windows;
       } else {
@@ -52,16 +52,20 @@
       toast('A moldura precisa ser PNG com transparência.', 'error', 3400);
       return;
     }
-    ev.frame = file;
-    ev.frameName = file.name;
+    let frame: Blob = file;
     try {
       const probe = await createImageBitmap(file);
       const ratio = probe.width / probe.height;
       probe.close();
-      const off = (id: FormatId) => Math.abs(ratio - FORMATS[id].unitPx[0] / FORMATS[id].unitPx[1]) / ratio;
-      if (off(ev.format) > 0.02) {
-        const best = FORMAT_ORDER.reduce((a, b) => (off(b) < off(a) ? b : a));
-        if (off(best) <= 0.02) {
+      const near = (a: number, b: number) => Math.abs(a - b) / b <= 0.02;
+      const cur = FORMATS[ev.format];
+      const unitRatio = (id: FormatId) => FORMATS[id].unitPx[0] / FORMATS[id].unitPx[1];
+      if (cur.copies === 2 && near(ratio, cur.sheetPx[0] / cur.sheetPx[1]) && !near(ratio, unitRatio(ev.format))) {
+        frame = await cropLeftHalf(file, cur.unitPx);
+        toast(`Arte com duas cópias detectada. Usando só uma ${cur.name.toLowerCase()}; o app duplica na impressão.`, 'info', 4200);
+      } else if (!near(ratio, unitRatio(ev.format))) {
+        const best = FORMAT_ORDER.reduce((a, b) => (Math.abs(ratio - unitRatio(b)) < Math.abs(ratio - unitRatio(a)) ? b : a));
+        if (near(ratio, unitRatio(best))) {
           ev.format = best;
           poses = Math.min(poses, FORMATS[best].maxPoses);
           toast(`Formato ajustado para ${FORMATS[best].name} ${formatCm(FORMATS[best].unitCm)} pelo tamanho do PNG`, 'info', 3400);
@@ -70,7 +74,9 @@
     } catch {
       /* segue para a análise */
     }
-    await analyze(file);
+    ev.frame = frame;
+    ev.frameName = file.name;
+    await analyze(frame);
   }
 
   function removeFrame() {
@@ -83,7 +89,8 @@
   function setFormat(f: FormatId) {
     if (f === ev.format) return;
     ev.format = f;
-    poses = Math.min(poses, FORMATS[f].maxPoses);
+    const max = FORMATS[f].maxPoses;
+    poses = max === 1 ? 1 : poses < 2 ? 3 : Math.min(poses, max);
     if (ev.frame) analyze(ev.frame);
     else ev.windows = defaultWindows(f, poses);
   }
@@ -216,7 +223,7 @@
           </div>
         {/if}
 
-        {#if !ev.frame}
+        {#if !ev.frame && spec.maxPoses > 1}
           <div class="poses">
             <span class="muted">Poses por sessão</span>
             <div class="stepper">
@@ -236,7 +243,7 @@
         <h2 class="title-lg">Captura</h2>
         <div class="field">
           <span>Contagem antes de cada foto</span>
-          <Segmented label="Contagem" bind:value={ev.countdown} options={[{ value: 3, label: '3 s' }, { value: 5, label: '5 s' }, { value: 7, label: '7 s' }]} />
+          <Segmented label="Contagem" bind:value={ev.countdown} options={[{ value: 0, label: 'Sem' }, { value: 3, label: '3 s' }, { value: 5, label: '5 s' }, { value: 7, label: '7 s' }]} />
         </div>
         <div class="field">
           <span>Timer de grupo</span>

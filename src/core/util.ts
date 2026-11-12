@@ -29,7 +29,7 @@ export async function blobToBitmap(blob: Blob): Promise<ImageBitmap> {
   return createImageBitmap(blob);
 }
 
-export async function analyzeFrame(blob: Blob, unitPx: [number, number]) {
+export async function analyzeFrame(blob: Blob, unitPx: [number, number], maxWindows = 6) {
   const bmp = await createImageBitmap(blob);
   const c = document.createElement('canvas');
   c.width = unitPx[0];
@@ -37,7 +37,7 @@ export async function analyzeFrame(blob: Blob, unitPx: [number, number]) {
   const ctx = c.getContext('2d', { willReadFrequently: true })!;
   ctx.drawImage(bmp, 0, 0, unitPx[0], unitPx[1]);
   const data = ctx.getImageData(0, 0, unitPx[0], unitPx[1]);
-  const result: DetectResult = detectWindows({ data: data.data, width: data.width, height: data.height });
+  const result: DetectResult = detectWindows({ data: data.data, width: data.width, height: data.height }, { maxWindows });
   const srcRatio = bmp.width / bmp.height;
   const dstRatio = unitPx[0] / unitPx[1];
   const sizeMatches = bmp.width === unitPx[0] && bmp.height === unitPx[1];
@@ -78,3 +78,13 @@ export const vibrate = (ms: number | number[]) => {
     /* sem vibração */
   }
 };
+
+export async function cropLeftHalf(blob: Blob, unitPx: [number, number]): Promise<Blob> {
+  const bmp = await createImageBitmap(blob);
+  const c = document.createElement('canvas');
+  c.width = unitPx[0];
+  c.height = unitPx[1];
+  c.getContext('2d')!.drawImage(bmp, 0, 0, bmp.width / 2, bmp.height, 0, 0, unitPx[0], unitPx[1]);
+  bmp.close();
+  return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error('Falha ao recortar'))), 'image/png'));
+}
