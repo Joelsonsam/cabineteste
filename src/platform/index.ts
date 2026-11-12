@@ -11,6 +11,17 @@ const Native = registerPlugin<CabineNative>('Cabine');
 
 export const isNative = Capacitor.isNativePlatform();
 
+export const isIOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+export const autoSaveSupported = isNative;
+
+function shareSheet(blob: Blob, fileName: string, title: string): Promise<void> | null {
+  const file = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+  if (!navigator.canShare?.({ files: [file] })) return null;
+  return navigator.share({ files: [file], title });
+}
+
 export async function blobToBase64(blob: Blob): Promise<string> {
   const buf = new Uint8Array(await blob.arrayBuffer());
   let out = '';
@@ -32,6 +43,15 @@ function download(blob: Blob, fileName: string) {
 
 export async function printSheet(blob: Blob, opts: { widthCm: number; heightCm: number; jobName: string }) {
   const landscape = opts.widthCm > opts.heightCm;
+  if (!isNative && isIOS) {
+    const shared = shareSheet(blob, `${opts.jobName}`, 'Imprimir');
+    if (shared) {
+      await shared.catch((e: DOMException) => {
+        if (e?.name !== 'AbortError') throw e;
+      });
+      return;
+    }
+  }
   if (isNative) {
     await Native.print({ data: await blobToBase64(blob), landscape, jobName: opts.jobName });
     return;
@@ -63,6 +83,13 @@ export async function saveToGallery(blob: Blob, fileName: string) {
     await Native.saveImage({ data: await blobToBase64(blob), fileName, album: 'Cabine Mude' });
     return;
   }
+  if (isIOS) {
+    const shared = shareSheet(blob, fileName, 'Salvar foto');
+    if (shared) {
+      await shared;
+      return;
+    }
+  }
   download(blob, fileName);
 }
 
@@ -84,9 +111,9 @@ export async function shareFile(blob: Blob, fileName: string, title: string) {
     await Share.share({ title, files: [uri], dialogTitle: title });
     return;
   }
-  const file = new File([blob], fileName, { type: blob.type });
-  if (navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], title });
+  const shared = shareSheet(blob, fileName, title);
+  if (shared) {
+    await shared;
     return;
   }
   download(blob, fileName);

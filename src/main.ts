@@ -1,6 +1,7 @@
 import { mount } from 'svelte';
 import './app.css';
 import App from './App.svelte';
+import { isNative } from './platform';
 
 async function boot() {
   try {
@@ -16,6 +17,10 @@ async function boot() {
     /* segue com a fonte do sistema */
   }
   mount(App, { target: document.getElementById('app')! });
+  if (!isNative && 'serviceWorker' in navigator && import.meta.env.PROD) {
+    const { registerSW } = await import('virtual:pwa-register');
+    registerSW({ immediate: true });
+  }
 }
 
 boot();

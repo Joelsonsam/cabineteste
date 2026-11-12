@@ -14,6 +14,43 @@ export type AnyCanvas = HTMLCanvasElement | OffscreenCanvas;
 type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 export type Drawable = CanvasImageSource & { width: number; height: number };
 
+let filterSupport: boolean | null = null;
+
+function canvasFilterSupported() {
+  if (filterSupport !== null) return filterSupport;
+  try {
+    const x = makeCanvas(1, 1).getContext('2d') as Ctx;
+    x.filter = 'grayscale(1)';
+    filterSupport = x.filter === 'grayscale(1)';
+  } catch {
+    filterSupport = false;
+  }
+  return filterSupport;
+}
+
+const clamp = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : v);
+
+export function applyFilterPixels(data: Uint8ClampedArray, id: FilterId) {
+  if (id === 'original') return;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    if (id === 'pb') {
+      const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      const v = clamp(((l - 128) * 1.12 + 128) * 1.02);
+      data[i] = data[i + 1] = data[i + 2] = v;
+    } else {
+      let nr = r * 1.06 + 8, ng = g * 1.01 + 2, nb = b * 0.88;
+      const l = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
+      nr = l + (nr - l) * 1.15;
+      ng = l + (ng - l) * 1.15;
+      nb = l + (nb - l) * 1.15;
+      data[i] = clamp(nr * 1.02);
+      data[i + 1] = clamp(ng * 1.02);
+      data[i + 2] = clamp(nb * 1.02);
+    }
+  }
+}
+
 export function makeCanvas(w: number, h: number): AnyCanvas {
   if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
   const c = document.createElement('canvas');
@@ -74,9 +111,21 @@ export function renderUnit(input: UnitInput): AnyCanvas {
     ctx.beginPath();
     ctx.rect(r.x, r.y, r.w, r.h);
     ctx.clip();
-    ctx.filter = filterCss(input.filter);
+    const native = canvasFilterSupported();
+    if (native) ctx.filter = filterCss(input.filter);
     ctx.drawImage(photo, src.x, src.y, src.w, src.h, r.x, r.y, r.w, r.h);
     ctx.restore();
+    if (!native && input.filter !== 'original') {
+      const x = Math.max(0, Math.floor(r.x));
+      const y = Math.max(0, Math.floor(r.y));
+      const w = Math.min(W - x, Math.ceil(r.w));
+      const h = Math.min(H - y, Math.ceil(r.h));
+      if (w > 0 && h > 0) {
+        const img = ctx.getImageData(x, y, w, h);
+        applyFilterPixels(img.data, input.filter);
+        ctx.putImageData(img, x, y);
+      }
+    }
   });
 
   if (input.frame) {

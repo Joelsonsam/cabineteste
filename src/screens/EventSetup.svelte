@@ -11,6 +11,7 @@
   import HoldButton from '../ui/HoldButton.svelte';
   import UnitPreview from '../ui/UnitPreview.svelte';
   import FrameEditor from './FrameEditor.svelte';
+  import { autoSaveSupported } from '../platform';
 
   let { id }: { id: string | null } = $props();
 
@@ -267,9 +268,9 @@
           <span>Filtro inicial</span>
           <Segmented label="Filtro inicial" bind:value={ev.filter} options={FILTERS.map((f) => ({ value: f.id, label: f.name }))} />
         </div>
-        <div class="toggles">
+        {#if autoSaveSupported}<div class="toggles">
           <Toggle bind:checked={ev.autoSave} label="Salvar na galeria ao aprovar" hint="Cada folha aprovada vai para o álbum Cabine Mude" />
-        </div>
+        </div>{/if}
       </div>
 
       {#if !isNew}

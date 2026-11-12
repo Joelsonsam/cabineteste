@@ -8,7 +8,7 @@
   import { FORMATS } from '../core/formats';
   import { shutter, tick } from '../core/sound';
   import { fileStamp, slug, vibrate } from '../core/util';
-  import { onHardwareShutter, printSheet, saveToGallery, shareFile } from '../platform';
+  import { autoSaveSupported, onHardwareShutter, printSheet, saveToGallery, shareFile } from '../platform';
   import Icon from '../ui/Icon.svelte';
   import UnitPreview from '../ui/UnitPreview.svelte';
   import Review from './Review.svelte';
@@ -260,7 +260,7 @@
       saveState = 'idle';
       phase = 'delivery';
       refreshLast();
-      if (ev.autoSave) save();
+      if (ev.autoSave && autoSaveSupported) save();
     } catch {
       toast('Não foi possível montar a folha. Tente aprovar de novo.', 'error', 3400);
     } finally {
@@ -278,7 +278,11 @@
       saveState = 'saved';
       session.savedToGallery = true;
       await db.sessions.update(session.id, { savedToGallery: true });
-    } catch {
+    } catch (e) {
+      if ((e as DOMException)?.name === 'AbortError') {
+        saveState = 'idle';
+        return;
+      }
       saveState = 'error';
       toast('Não foi possível salvar na galeria. Verifique o espaço do aparelho.', 'error', 3400);
     }

@@ -104,3 +104,17 @@ describe('formatos', () => {
         }
   });
 });
+
+describe('filtros sem suporte de canvas', () => {
+  it('converte em P&B e aquece mantendo o alfa', async () => {
+    const { applyFilterPixels } = await import('./compose');
+    const px = new Uint8ClampedArray([200, 100, 50, 255, 200, 100, 50, 255]);
+    applyFilterPixels(px.subarray(0, 4), 'pb');
+    expect(px[0]).toBe(px[1]);
+    expect(px[1]).toBe(px[2]);
+    expect(px[3]).toBe(255);
+    applyFilterPixels(px.subarray(4, 8), 'quente');
+    expect(px[4]).toBeGreaterThan(200);
+    expect(px[6]).toBeLessThan(50);
+  });
+});
