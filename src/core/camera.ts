@@ -22,6 +22,34 @@ export interface CameraState {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+export interface CameraOptions {
+  deviceId?: string | null;
+  width?: number;
+  height?: number;
+}
+
+export interface CameraInfo {
+  deviceId: string;
+  label: string;
+}
+
+export async function listCameras(): Promise<CameraInfo[]> {
+  if (!navigator.mediaDevices?.enumerateDevices) return [];
+  const all = await navigator.mediaDevices.enumerateDevices();
+  return all
+    .filter((d) => d.kind === 'videoinput')
+    .map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Câmera ${i + 1}` }));
+}
+
+export function preferExternal(list: CameraInfo[]): CameraInfo | null {
+  return (
+    list.find((c) => /brio|logitech|logi\b/i.test(c.label)) ??
+    list.find((c) => /usb|uvc|external|externa/i.test(c.label)) ??
+    list[0] ??
+    null
+  );
+}
+
 export class Camera {
   stream: MediaStream | null = null;
   track: MediaStreamTrack | null = null;
@@ -30,20 +58,21 @@ export class Camera {
   private flashMode = false;
   canTorch = false;
 
-  async start(facing: CameraFacing, video: HTMLVideoElement): Promise<void> {
+  async start(facing: CameraFacing, video: HTMLVideoElement, opts: CameraOptions = {}): Promise<void> {
     this.stop();
     this.facing = facing;
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('Este aparelho não oferece acesso à câmera.');
+    const size = { width: { ideal: opts.width ?? 3840 }, height: { ideal: opts.height ?? 2160 }, frameRate: { ideal: 30 } };
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: facing },
-          width: { ideal: 3840 },
-          height: { ideal: 2160 },
-          frameRate: { ideal: 30 },
-        },
-      });
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: opts.deviceId ? { deviceId: { exact: opts.deviceId }, ...size } : { facingMode: { ideal: facing }, ...size },
+        });
+      } catch (e) {
+        if (!opts.deviceId || (e as DOMException)?.name === 'NotAllowedError') throw e;
+        this.stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: size });
+      }
     } catch (e) {
       const name = (e as DOMException)?.name;
       if (name === 'NotAllowedError') throw new Error('A câmera foi bloqueada. Libere a permissão de câmera do app nas configurações do Android.');

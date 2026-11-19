@@ -7,6 +7,9 @@
   import Events from './screens/Events.svelte';
   import EventSetup from './screens/EventSetup.svelte';
   import Booth from './screens/Booth.svelte';
+  import TotemBooth from './screens/TotemBooth.svelte';
+  import Diagnostics from './screens/Diagnostics.svelte';
+  import { TOTEM } from './target';
   import Gallery from './screens/Gallery.svelte';
   import Settings from './screens/Settings.svelte';
   import Toasts from './ui/Toasts.svelte';
@@ -40,7 +43,7 @@
   });
 </script>
 
-<div class="root" class:theme-light={light} style={accentVars(accent)}>
+<div class="root" class:lite={TOTEM} class:theme-light={light} style={accentVars(accent)}>
   {#if app.ready}
     {#if app.route.name === 'events'}
       <Events />
@@ -49,11 +52,13 @@
         <EventSetup id={app.route.id} />
       {/key}
     {:else if app.route.name === 'booth'}
-      <Booth />
+      {#if TOTEM}<TotemBooth />{:else}<Booth />{/if}
     {:else if app.route.name === 'gallery'}
       <Gallery />
     {:else if app.route.name === 'settings'}
       <Settings />
+    {:else if app.route.name === 'diagnostics'}
+      <Diagnostics />
     {/if}
   {/if}
   <Toasts />

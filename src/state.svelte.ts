@@ -1,13 +1,15 @@
 import { db, getSetting, setSetting, uid, type BoothEvent } from './core/db';
 import { defaultWindows } from './core/formats';
 import { setSound } from './core/sound';
+import { loadTotemPrefs, saveTotemPrefs, TOTEM_DEFAULTS, type TotemPrefs } from './core/totem';
 
 export type Route =
   | { name: 'events' }
   | { name: 'setup'; id: string | null }
   | { name: 'booth' }
   | { name: 'gallery' }
-  | { name: 'settings' };
+  | { name: 'settings' }
+  | { name: 'diagnostics' };
 
 export type ThemePref = 'auto' | 'light' | 'dark';
 
@@ -20,6 +22,7 @@ export const app = $state({
   activeId: null as string | null,
   sound: true,
   theme: 'auto' as ThemePref,
+  totem: { ...TOTEM_DEFAULTS } as TotemPrefs,
   ready: false,
   toasts: [] as Toast[],
 });
@@ -58,6 +61,7 @@ export async function loadAll() {
   if (app.activeId && !app.events.some((e) => e.id === app.activeId)) app.activeId = null;
   app.sound = await getSetting('sound', true);
   app.theme = await getSetting<ThemePref>('theme', 'auto');
+  app.totem = await loadTotemPrefs();
   setSound(app.sound);
   app.ready = true;
 }
@@ -105,4 +109,9 @@ export async function saveEvent(ev: BoothEvent) {
   row.frame = ev.frame;
   await db.events.put(row);
   app.events = await db.events.orderBy('updatedAt').reverse().toArray();
+}
+
+export async function setTotemPrefs(p: Partial<TotemPrefs>) {
+  app.totem = { ...app.totem, ...p };
+  await saveTotemPrefs($state.snapshot(app.totem) as TotemPrefs);
 }

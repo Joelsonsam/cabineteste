@@ -1,7 +1,13 @@
+import './polyfills';
 import { mount } from 'svelte';
 import './app.css';
 import App from './App.svelte';
 import { isNative } from './platform';
+import { TOTEM } from './target';
+
+if (TOTEM && Math.min(screen.width, screen.height) >= 900) {
+  document.querySelector('meta[name=viewport]')?.setAttribute('content', 'width=600, user-scalable=no, viewport-fit=cover');
+}
 
 async function boot() {
   try {

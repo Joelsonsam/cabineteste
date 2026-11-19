@@ -3,12 +3,15 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 const base = process.env.BASE ?? '/';
+const totem = process.env.VITE_TARGET === 'totem';
 
 export default defineConfig({
   base,
+  build: totem ? { target: ['es2017', 'chrome61'], cssTarget: 'chrome61' } : undefined,
   plugins: [
     svelte(),
     VitePWA({
+      disable: totem,
       injectRegister: null,
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],

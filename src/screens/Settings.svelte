@@ -1,7 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { scale } from 'svelte/transition';
-  import { app, back, setSoundPref, setThemePref, type ThemePref } from '../state.svelte';
+  import { app, back, go, setSoundPref, setThemePref, setTotemPrefs, type ThemePref } from '../state.svelte';
+  import { TOTEM } from '../target';
+  import { listCameras, type CameraInfo } from '../core/camera';
+  import type { Rotation, TotemPrefs } from '../core/totem';
   import Segmented from '../ui/Segmented.svelte';
   import { FORMATS, FORMAT_ORDER, formatCm, formatPx } from '../core/formats';
   import { formatBytes, vibrate } from '../core/util';
@@ -20,10 +23,42 @@
   });
 
   let usage: { used: number; quota: number } | null = $state(null);
+  let cams: CameraInfo[] = $state([]);
   onMount(async () => {
     usage = await storageEstimate();
     clearShareCache();
+    if (TOTEM) {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        s.getTracks().forEach((t) => t.stop());
+      } catch {
+        /* sem câmera */
+      }
+      cams = await listCameras();
+    }
   });
+
+  let cameraId = $state(app.totem.cameraId ?? '');
+  let resolution: TotemPrefs['resolution'] = $state(app.totem.resolution);
+  let rotation: Rotation = $state(app.totem.rotation);
+  let mirror = $state(app.totem.mirror);
+  let guestPrint = $state(app.totem.guestPrint);
+  let idleSeconds = $state(app.totem.idleSeconds);
+  let maxRetakes = $state(app.totem.maxRetakes);
+  let pin = $state(app.totem.pin);
+  $effect(() => {
+    if (!TOTEM) return;
+    const next = { cameraId: cameraId || null, resolution, rotation, mirror, guestPrint, idleSeconds, maxRetakes };
+    const cur = app.totem;
+    if (Object.entries(next).some(([k, v]) => cur[k as keyof TotemPrefs] !== v)) setTotemPrefs(next);
+  });
+  function savePin() {
+    if (!/^\d{4,6}$/.test(pin)) {
+      pin = app.totem.pin;
+      return;
+    }
+    if (pin !== app.totem.pin) setTotemPrefs({ pin });
+  }
 
   let taps = $state(0);
   let credit = $state(false);
@@ -46,6 +81,47 @@
 
   <div class="scroll">
     <div class="body">
+      {#if TOTEM}
+        <div class="block">
+          <h2 class="h">Totem</h2>
+          <label class="field">
+            <span>Câmera</span>
+            <select class="input" bind:value={cameraId}>
+              <option value="">Automática (prefere a Logitech)</option>
+              {#each cams as c (c.deviceId)}<option value={c.deviceId}>{c.label}</option>{/each}
+            </select>
+          </label>
+          <div class="field">
+            <span>Resolução da câmera</span>
+            <Segmented label="Resolução" bind:value={resolution} options={[{ value: 720, label: '720p' }, { value: 1080, label: '1080p' }, { value: 2160, label: '4K' }]} />
+          </div>
+          <div class="field">
+            <span>Girar a imagem</span>
+            <Segmented label="Girar" bind:value={rotation} options={[{ value: 0, label: '0°' }, { value: 90, label: '90°' }, { value: 180, label: '180°' }, { value: 270, label: '270°' }]} />
+          </div>
+          <Toggle bind:checked={mirror} label="Espelhar a prévia" hint="O convidado se vê como num espelho; a foto sai sem espelho" />
+          <Toggle bind:checked={guestPrint} label="Botão Imprimir para o convidado" />
+          <div class="field">
+            <span>Voltar à tela inicial após</span>
+            <Segmented label="Inatividade" bind:value={idleSeconds} options={[{ value: 20, label: '20 s' }, { value: 40, label: '40 s' }, { value: 60, label: '60 s' }]} />
+          </div>
+          <div class="field">
+            <span>Novas tentativas por convidado</span>
+            <Segmented label="Tentativas" bind:value={maxRetakes} options={[{ value: 0, label: '0' }, { value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3' }]} />
+          </div>
+          <label class="field">
+            <span>PIN do operador (4 a 6 números)</span>
+            <input class="input" inputmode="numeric" maxlength="6" bind:value={pin} onblur={savePin} />
+          </label>
+          <p class="muted small">Na tela do convidado, segure o canto superior esquerdo por 2 segundos para abrir a área do operador.</p>
+        </div>
+      {/if}
+
+      <button class="block link-row" onclick={() => go({ name: 'diagnostics' })}>
+        <span><strong>Diagnóstico</strong><span class="muted small">Testa o aparelho, a câmera e a velocidade de montagem</span></span>
+        <span class="chev"><Icon name="back" size={20} /></span>
+      </button>
+
       <div class="block">
         <div class="field">
           <span>Aparência</span>
@@ -151,6 +227,26 @@
     text-align: right;
     white-space: nowrap;
     padding-left: 8px;
+  }
+  .link-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+  }
+  .link-row > span:first-child {
+    display: grid;
+    grid-gap: 4px;
+    gap: 4px;
+  }
+  .chev {
+    display: inline-flex;
+    transform: rotate(180deg);
+    color: var(--muted);
+  }
+  select.input {
+    appearance: none;
+    -webkit-appearance: none;
   }
   .about {
     background: transparent;

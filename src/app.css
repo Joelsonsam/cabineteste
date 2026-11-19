@@ -343,6 +343,7 @@ h3 {
   padding: 0 8px;
   border-radius: var(--r-xs);
   background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
   color: color-mix(in srgb, var(--accent) 72%, var(--text));
   font-size: 13px;
   font-weight: 500;
@@ -355,4 +356,21 @@ h3 {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+.lite {
+  --glass: none;
+}
+
+.lite .screen {
+  background-image: none;
+}
+
+.lite .screen::before {
+  display: none;
+}
+
+.lite * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }

@@ -8,6 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        alvo: [celular, totem]
     steps:
       - uses: actions/checkout@v4
 
@@ -23,17 +27,22 @@ jobs:
 
       - run: npm ci
       - run: npm test
-      - run: npm run build
+
+      - name: Gerar app web
+        run: npm run build
+        env:
+          VITE_TARGET: ${{ matrix.alvo }}
+
       - run: npx cap sync android
 
       - name: Gerar APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assemble${{ matrix.alvo == 'totem' && 'Totem' || 'Celular' }}Debug --no-daemon
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cabine-mude-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: cabine-${{ matrix.alvo }}-apk
+          path: android/app/build/outputs/apk/${{ matrix.alvo }}/debug/*.apk
           retention-days: 30

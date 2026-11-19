@@ -18,6 +18,21 @@ npm run android
 
 No Android Studio: *Build > Build App Bundle(s) / APK(s) > Build APK(s)*.
 
+## Totem (Cabine Totem)
+
+O build **APK Android** gera dois arquivos: `cabine-celular-apk` (operador com celular) e `cabine-totem-apk` (autoatendimento em totem). Os dois instalam lado a lado e as atualizações instalam por cima.
+
+- Câmera USB (Logitech MX Brio): escolhida sozinha; ajuste câmera, resolução, rotação e espelho em Ajustes.
+- Área do operador: segure o canto superior esquerdo por 2 segundos e digite o PIN (padrão 1234).
+- Ajustes > Diagnóstico: testa o aparelho, a câmera e o tempo de montagem; o relatório pode ser enviado.
+
+## iPhone (app web instalável)
+
+1. No repositório: *Settings > Pages > Build and deployment > Source*: **GitHub Actions**.
+2. O build **App web (iPhone)** publica em `https://<usuario>.github.io/<repositorio>/` a cada envio para a `main`.
+3. No iPhone, abra o endereço no Safari, toque em *Compartilhar > Adicionar à Tela de Início* e abra pelo ícone.
+4. Depois da primeira abertura funciona sem internet. Imprimir e Salvar abrem a folha de compartilhamento do iOS (AirPrint e Salvar Imagem).
+
 ## Testar no navegador
 
 ```
