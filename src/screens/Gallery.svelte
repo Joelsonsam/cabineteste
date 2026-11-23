@@ -7,6 +7,7 @@
   import { FORMATS } from '../core/formats';
   import { fileStamp, formatBytes, slug } from '../core/util';
   import { printSheet, saveToGallery, shareFile } from '../platform';
+  import { printJob } from '../core/compose';
   import Icon from '../ui/Icon.svelte';
   import HoldButton from '../ui/HoldButton.svelte';
 
@@ -67,7 +68,8 @@
 
   async function reprint(s: Item) {
     try {
-      await printSheet(s.sheet, { widthCm: spec.sheetCm[0], heightCm: spec.sheetCm[1], jobName: name(s) });
+      const job = await printJob(s.sheet, ev.format);
+      await printSheet(job.blob, { widthCm: job.widthCm, heightCm: job.heightCm, jobName: name(s) });
       s.prints += 1;
       await db.sessions.update(s.id, { prints: s.prints });
     } catch {

@@ -138,7 +138,8 @@ export class Camera {
     return createImageBitmap(c);
   }
 
-  async shoot(video: HTMLVideoElement, flash: boolean): Promise<ImageBitmap> {
+  async shoot(video: HTMLVideoElement, flash: boolean, fromVideo = false): Promise<ImageBitmap> {
+    if (fromVideo && video.videoWidth) return this.frameFromVideo(video);
     const portraitPreview = video.videoHeight > video.videoWidth;
     const useFlash = flash && this.facing === 'environment';
 

@@ -1,4 +1,4 @@
-import { FORMATS, type FormatId, type Rect } from './formats';
+import { cmToPx, FORMATS, type FormatId, type Rect } from './formats';
 
 export type FilterId = 'original' | 'pb' | 'quente';
 
@@ -211,6 +211,26 @@ export async function withJpegDpi(blob: Blob, dpi = 300): Promise<Blob> {
 export async function exportSheet(unit: AnyCanvas, format: FormatId): Promise<Blob> {
   const sheet = renderSheet(unit, format);
   return withJpegDpi(await canvasToBlob(sheet, 'image/jpeg', 0.95));
+}
+
+export async function printJob(sheet: Blob, format: FormatId): Promise<{ blob: Blob; widthCm: number; heightCm: number }> {
+  const f = FORMATS[format];
+  if (!f.digital) return { blob: sheet, widthCm: f.sheetCm[0], heightCm: f.sheetCm[1] };
+  const bmp = await createImageBitmap(sheet);
+  const W = cmToPx(15);
+  const H = cmToPx(10);
+  const cellW = W / 2;
+  const k = Math.min(cellW / bmp.width, H / bmp.height);
+  const w = Math.round(bmp.width * k);
+  const h = Math.round(bmp.height * k);
+  const c = makeCanvas(W, H);
+  const ctx = c.getContext('2d') as Ctx;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, W, H);
+  ctx.imageSmoothingQuality = 'high';
+  for (let i = 0; i < 2; i++) ctx.drawImage(bmp, Math.round(i * cellW + (cellW - w) / 2), Math.round((H - h) / 2), w, h);
+  bmp.close();
+  return { blob: await withJpegDpi(await canvasToBlob(c, 'image/jpeg', 0.95)), widthCm: 15, heightCm: 10 };
 }
 
 export async function thumbnail(source: AnyCanvas, maxSide = 520): Promise<Blob> {

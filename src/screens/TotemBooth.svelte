@@ -3,7 +3,7 @@
   import { fade } from 'svelte/transition';
   import { activeEvent, app, go, home, toast } from '../state.svelte';
   import { Camera, listCameras, preferExternal } from '../core/camera';
-  import { coverRect, exportSheet, renderUnit, thumbnail, FILTERS, type FilterId } from '../core/compose';
+  import { coverRect, exportSheet, printJob, renderUnit, thumbnail, FILTERS, type FilterId } from '../core/compose';
   import { db, uid, type BoothSession } from '../core/db';
   import { FORMATS } from '../core/formats';
   import { resolutionSize, rotateBitmap } from '../core/totem';
@@ -68,7 +68,7 @@
     const k = proofW && proofH ? Math.min(proofW / w, proofH / h) : 0;
     return `width:${w * k}px;height:${h * k}px`;
   });
-  const canPrint = prefs.guestPrint && !spec.digital;
+  const canPrint = prefs.guestPrint;
   const countdownSeconds = Math.max(3, ev.countdown || 3);
 
   async function startCamera() {
@@ -198,14 +198,14 @@
       shutter();
       vibrate(30);
       try {
-        const raw = await rotateBitmap(await camera.shoot(video, false), prefs.rotation);
+        const raw = await rotateBitmap(await camera.shoot(video, false, true), prefs.rotation);
         photos[current] = await crop(raw, current);
       } catch {
         toast('A câmera não respondeu. Tente de novo.', 'error');
         phase = 'live';
         return;
       }
-      await sleep(n < todo.length - 1 ? 700 : 300);
+      if (n < todo.length - 1) await sleep(700);
     }
     if (t.cancelled) return;
     camera.stop();
@@ -263,7 +263,8 @@
     if (!session || printed || !settled()) return;
     printed = true;
     try {
-      await printSheet(session.sheet, { widthCm: spec.sheetCm[0], heightCm: spec.sheetCm[1], jobName: name() });
+      const job = await printJob(session.sheet, ev.format);
+      await printSheet(job.blob, { widthCm: job.widthCm, heightCm: job.heightCm, jobName: name() });
       session.prints += 1;
       await db.sessions.update(session.id, { prints: session.prints });
     } catch {

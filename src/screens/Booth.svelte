@@ -3,7 +3,7 @@
   import { fade, scale } from 'svelte/transition';
   import { activeEvent, app, go, home, toast } from '../state.svelte';
   import { Camera } from '../core/camera';
-  import { coverRect, exportSheet, renderUnit, thumbnail, type FilterId } from '../core/compose';
+  import { coverRect, exportSheet, printJob, renderUnit, thumbnail, type FilterId } from '../core/compose';
   import { db, sessionsFor, uid, type BoothSession, type CameraFacing } from '../core/db';
   import { FORMATS } from '../core/formats';
   import { shutter, tick } from '../core/sound';
@@ -291,7 +291,8 @@
   async function print() {
     if (!session) return;
     try {
-      await printSheet(session.sheet, { widthCm: spec.sheetCm[0], heightCm: spec.sheetCm[1], jobName: fileName() });
+      const job = await printJob(session.sheet, ev.format);
+      await printSheet(job.blob, { widthCm: job.widthCm, heightCm: job.heightCm, jobName: fileName() });
       session.prints += 1;
       await db.sessions.update(session.id, { prints: session.prints });
     } catch {
