@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { app, go, setActive } from '../state.svelte';
   import { countSessions } from '../core/db';
-  import { FORMATS, formatCm } from '../core/formats';
+  import { FORMATS, formatSize } from '../core/formats';
   import { accentVars } from '../core/util';
   import Icon from '../ui/Icon.svelte';
   import UnitPreview from '../ui/UnitPreview.svelte';
@@ -73,7 +73,7 @@
                   <strong>{ev.name || 'Evento sem nome'}</strong>
                 </div>
                 <span class="muted">{f.name}{ev.format.startsWith('lembranca') ? (f.landscape ? ' paisagem' : ' retrato') : ''}</span>
-                <span class="mono muted">{formatCm(f.unitCm)} / {ev.windows.length} {ev.windows.length === 1 ? 'pose' : 'poses'}</span>
+                <span class="mono muted">{formatSize(f)} / {ev.windows.length} {ev.windows.length === 1 ? 'pose' : 'poses'}</span>
                 <span class="foot">
                   {#if ev.id === app.activeId}<span class="chip">Em uso</span>{/if}
                   <span class="mono muted">{n} {n === 1 ? 'sessão' : 'sessões'}</span>

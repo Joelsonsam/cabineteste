@@ -6,7 +6,7 @@
   import { listCameras, type CameraInfo } from '../core/camera';
   import type { Rotation, TotemPrefs } from '../core/totem';
   import Segmented from '../ui/Segmented.svelte';
-  import { FORMATS, FORMAT_ORDER, formatCm, formatPx } from '../core/formats';
+  import { FORMATS, FORMAT_ORDER, formatSize, formatPx } from '../core/formats';
   import { formatBytes, vibrate } from '../core/util';
   import { clearShareCache, isNative, storageEstimate } from '../platform';
   import Icon from '../ui/Icon.svelte';
@@ -155,7 +155,7 @@
               {@const f = FORMATS[id]}
               <tr>
                 <td>{f.name}{id.startsWith('lembranca') ? (f.landscape ? ' paisagem' : ' retrato') : ''}</td>
-                <td class="mono">{formatCm(f.unitCm)}</td>
+                <td class="mono">{formatSize(f)}</td>
                 <td class="mono">{formatPx(f.unitPx)}</td>
               </tr>
             {/each}

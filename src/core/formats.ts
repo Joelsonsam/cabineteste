@@ -1,8 +1,10 @@
+import { TOTEM } from '../target';
+
 export const DPI = 300;
 
 export const cmToPx = (cm: number) => Math.round((cm * DPI) / 2.54);
 
-export type FormatId = 'lembranca-retrato' | 'lembranca-paisagem' | 'tirinha' | 'polaroid';
+export type FormatId = 'lembranca-retrato' | 'lembranca-paisagem' | 'tirinha' | 'polaroid' | 'feed';
 
 export interface Rect {
   x: number;
@@ -23,6 +25,7 @@ export interface FormatSpec {
   placements: { x: number; y: number }[];
   landscape: boolean;
   maxPoses: number;
+  digital: boolean;
 }
 
 function spec(
@@ -32,10 +35,11 @@ function spec(
   unitCm: [number, number],
   sheetCm: [number, number],
   copies: number,
-  maxPoses: number
+  maxPoses: number,
+  px?: [number, number]
 ): FormatSpec {
-  const unitPx: [number, number] = [cmToPx(unitCm[0]), cmToPx(unitCm[1])];
-  const sheetPx: [number, number] = [cmToPx(sheetCm[0]), cmToPx(sheetCm[1])];
+  const unitPx: [number, number] = px ?? [cmToPx(unitCm[0]), cmToPx(unitCm[1])];
+  const sheetPx: [number, number] = px ?? [cmToPx(sheetCm[0]), cmToPx(sheetCm[1])];
   const placements =
     copies === 1
       ? [{ x: 0, y: 0 }]
@@ -55,6 +59,7 @@ function spec(
     placements,
     landscape: sheetCm[0] > sheetCm[1],
     maxPoses,
+    digital: !!px,
   };
 }
 
@@ -63,13 +68,22 @@ export const FORMATS: Record<FormatId, FormatSpec> = {
   'lembranca-paisagem': spec('lembranca-paisagem', 'Foto lembrança', 'Horizontal, foto única', [15, 10], [15, 10], 1, 1),
   tirinha: spec('tirinha', 'Tirinha', 'Duas tiras por folha 10 × 15', [5, 15], [10, 15], 2, 4),
   polaroid: spec('polaroid', 'Polaroid', 'Foto única, duas por folha 15 × 10', [7.5, 10], [15, 10], 2, 1),
+  feed: spec('feed', 'Feed vertical', 'Foto digital 4:5, para celular e Instagram', [4, 5], [4, 5], 1, 4, [1080, 1350]),
 };
 
-export const FORMAT_ORDER: FormatId[] = ['lembranca-retrato', 'lembranca-paisagem', 'tirinha', 'polaroid'];
+export const PRINT_FORMATS: FormatId[] = ['lembranca-retrato', 'lembranca-paisagem', 'tirinha', 'polaroid'];
+
+export const FORMAT_ORDER: FormatId[] = TOTEM ? ['feed'] : PRINT_FORMATS;
+
+export const DEFAULT_FORMAT: FormatId = TOTEM ? 'feed' : 'tirinha';
 
 export function formatCm(c: [number, number]) {
   const f = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
   return `${f(c[0])} × ${f(c[1])} cm`;
+}
+
+export function formatSize(f: FormatSpec) {
+  return f.digital ? `${f.unitPx[0]} × ${f.unitPx[1]} px` : formatCm(f.unitCm);
 }
 
 export function formatPx(p: [number, number]) {

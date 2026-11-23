@@ -3,7 +3,7 @@
   import { app, back, go, newEventDraft, saveEvent, setActive, toast, home } from '../state.svelte';
   import { deleteEvent, type BoothEvent } from '../core/db';
   import { FILTERS } from '../core/compose';
-  import { FORMATS, FORMAT_ORDER, defaultWindows, formatCm, formatPx, type FormatId } from '../core/formats';
+  import { FORMATS, FORMAT_ORDER, defaultWindows, formatSize, formatPx, type FormatId } from '../core/formats';
   import { ACCENTS, accentVars, analyzeFrame, cropLeftHalf } from '../core/util';
   import Icon from '../ui/Icon.svelte';
   import Segmented from '../ui/Segmented.svelte';
@@ -69,7 +69,7 @@
         if (near(ratio, unitRatio(best))) {
           ev.format = best;
           poses = Math.min(poses, FORMATS[best].maxPoses);
-          toast(`Formato ajustado para ${FORMATS[best].name} ${formatCm(FORMATS[best].unitCm)} pelo tamanho do PNG`, 'info', 3400);
+          toast(`Formato ajustado para ${FORMATS[best].name} ${formatSize(FORMATS[best])} pelo tamanho do PNG`, 'info', 3400);
         }
       }
     } catch {
@@ -181,7 +181,7 @@
                 {#each f.placements as _, i (i)}<i style="flex:1"></i>{/each}
               </span>
               <span class="fmt-name">{f.name}</span>
-              <span class="fmt-cm mono">{formatCm(f.unitCm)}</span>
+              <span class="fmt-cm mono">{formatSize(f)}</span>
               <span class="fmt-hint">{f.hint}</span>
             </button>
           {/each}
@@ -200,7 +200,7 @@
             <p class="spec">
               <span class="muted small">Arquivo da moldura</span>
               <strong>{formatPx(spec.unitPx)}</strong>
-              <span class="mono muted">{formatCm(spec.unitCm)} / 300 dpi / PNG RGB</span>
+              <span class="mono muted">{spec.digital ? 'PNG RGB com transparência' : `${formatSize(spec)} / 300 dpi / PNG RGB`}</span>
             </p>
             <input bind:this={fileInput} type="file" accept="image/png" hidden onchange={pickFrame} />
             <button class="btn btn-ghost" onclick={() => fileInput.click()}>

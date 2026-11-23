@@ -39,6 +39,12 @@
   let frameBmp: ImageBitmap | null = null;
   let token = { cancelled: false };
   let lastTouch = Date.now();
+  let phaseAt = Date.now();
+  $effect(() => {
+    phase;
+    phaseAt = Date.now();
+  });
+  const settled = () => Date.now() - phaseAt > 800;
   let idleTimer = 0;
 
   let areaW = $state(0);
@@ -62,6 +68,7 @@
     const k = proofW && proofH ? Math.min(proofW / w, proofH / h) : 0;
     return `width:${w * k}px;height:${h * k}px`;
   });
+  const canPrint = prefs.guestPrint && !spec.digital;
   const countdownSeconds = Math.max(3, ev.countdown || 3);
 
   async function startCamera() {
@@ -88,6 +95,7 @@
     const idle = (Date.now() - lastTouch) / 1000;
     if (pinOpen || menuOpen) return;
     if ((phase === 'live' || phase === 'review') && idle > prefs.idleSeconds) toAttract();
+    if (phase === 'live' && cameraError && idle > 15) toAttract();
     if (phase === 'done' && idle > Math.min(25, prefs.idleSeconds)) toAttract();
   }
 
@@ -130,6 +138,10 @@
     current = 0;
   }
 
+  function leave() {
+    if (settled()) toAttract();
+  }
+
   function toAttract() {
     token.cancelled = true;
     count = 0;
@@ -146,6 +158,7 @@
   }
 
   async function begin() {
+    if (!settled()) return;
     touch();
     phase = 'live';
     await nextTick();
@@ -165,7 +178,7 @@
   }
 
   async function shoot() {
-    if (!cameraReady || phase !== 'live') return;
+    if (!cameraReady || phase !== 'live' || !settled()) return;
     const t = { cancelled: false };
     token = t;
     phase = 'countdown';
@@ -201,6 +214,7 @@
   }
 
   async function retake() {
+    if (!settled()) return;
     retakes++;
     resetPhotos();
     phase = 'live';
@@ -211,6 +225,7 @@
   const name = () => `${slug(ev.name)}-${fileStamp(new Date(session?.createdAt ?? Date.now()))}.jpg`;
 
   async function approve() {
+    if (!settled()) return;
     phase = 'building';
     await sleep(60);
     try {
@@ -245,7 +260,7 @@
   }
 
   async function print() {
-    if (!session || printed) return;
+    if (!session || printed || !settled()) return;
     printed = true;
     try {
       await printSheet(session.sheet, { widthCm: spec.sheetCm[0], heightCm: spec.sheetCm[1], jobName: name() });
@@ -306,7 +321,7 @@
           <!-- svelte-ignore a11y_media_has_caption -->
           <video bind:this={video} style={videoStyle} playsinline muted autoplay></video>
           {#if cameraError}
-            <div class="msg"><Icon name="alert" size={48} /><p>{cameraError}</p><button class="big ghost" onclick={startCamera}>Tentar de novo</button></div>
+            <div class="msg"><Icon name="alert" size={48} /><p>A câmera não respondeu. Chame a equipe.</p><p class="detail">{cameraError}</p><button class="big ghost" onclick={startCamera}>Tentar de novo</button></div>
           {:else if !cameraReady}
             <div class="msg"><span class="spinner"></span></div>
           {/if}
@@ -318,7 +333,7 @@
       </div>
       <div class="actions">
         {#if phase === 'live'}
-          <button class="big ghost" onclick={toAttract}>Voltar</button>
+          <button class="big ghost" onclick={leave}><Icon name="back" size={36} />Voltar</button>
           <button class="big accent grow" onclick={shoot} disabled={!cameraReady}>
             <Icon name="camera" size={40} />{ev.windows.length > 1 ? 'Começar' : 'Tirar foto'}
           </button>
@@ -356,13 +371,15 @@
         {#if doneUrl}<img class="final" src={doneUrl} alt="Sua foto" style={proofFit} />{/if}
       </div>
       <div class="actions">
-        {#if prefs.guestPrint}
+        {#if canPrint}
           <button class="big accent grow" onclick={print} disabled={printed}><Icon name={printed ? 'check' : 'print'} size={40} />{printed ? 'Enviada' : 'Imprimir'}</button>
         {/if}
-        <button class="big ghost" class:grow={!prefs.guestPrint} onclick={toAttract}>Concluir</button>
+        <button class="big ghost" class:grow={!canPrint} onclick={leave}>Concluir</button>
       </div>
     </div>
   {/if}
+
+  {#if phase !== 'attract'}<p class="foot">{ev.name}</p>{/if}
 
   {#if pinOpen}
     <PinPad pin={prefs.pin} oncancel={() => (pinOpen = false)} onsuccess={() => { pinOpen = false; menuOpen = true; }} />
@@ -410,10 +427,10 @@
     left: 0;
     width: 100%;
     display: grid;
-    grid-template-rows: auto 1fr auto auto;
+    grid-template-rows: auto 52vh auto auto 1fr;
     justify-items: center;
     align-items: center;
-    padding: 3em 2em 3em;
+    padding: 4vh 2em 0;
     text-align: center;
     background: radial-gradient(ellipse at 50% 45%, rgba(var(--accent-rgb), 0.28), transparent 65%), #121212;
   }
@@ -426,8 +443,7 @@
   .sample {
     display: block;
     height: 100%;
-    max-height: 60vh;
-    padding: 2em 0;
+    padding: 2.5vh 0;
   }
   .sample :global(.sample-canvas) {
     height: 100%;
@@ -473,7 +489,22 @@
     left: 0;
     display: flex;
     flex-direction: column;
-    padding: 2em 1.5em;
+    padding: 3vh 1.5em 0;
+  }
+  .foot {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 5vh;
+    text-align: center;
+    color: #6f6f6f;
+    font-size: 1.1em;
+    pointer-events: none;
+  }
+  .detail {
+    font-family: 'Geist Mono Variable', monospace;
+    font-size: 0.7em;
+    color: #8a8a8a;
   }
   .head {
     display: grid;
@@ -502,9 +533,9 @@
     background: var(--accent);
   }
   .area {
-    flex: 1;
-    min-height: 0;
-    margin: 1em 0;
+    flex: none;
+    height: 54vh;
+    margin: 1.5vh 0 2.5vh;
     display: grid;
     place-items: center;
   }
@@ -620,9 +651,9 @@
     letter-spacing: -0.02em;
   }
   .proof-wrap {
-    flex: 1;
-    min-height: 0;
-    margin: 1.5em 0;
+    flex: none;
+    height: 50vh;
+    margin: 2vh 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -638,10 +669,13 @@
     display: block;
     box-shadow: 0 1em 2.5em rgba(0, 0, 0, 0.6);
   }
+  .done .proof-wrap {
+    height: 54vh;
+  }
   .filters {
     display: flex;
     justify-content: center;
-    margin-bottom: 1.5em;
+    margin-bottom: 2.5vh;
   }
   .filters button {
     min-height: 3em;

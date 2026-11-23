@@ -1,5 +1,5 @@
 import { db, getSetting, setSetting, uid, type BoothEvent } from './core/db';
-import { defaultWindows } from './core/formats';
+import { DEFAULT_FORMAT, defaultWindows } from './core/formats';
 import { setSound } from './core/sound';
 import { loadTotemPrefs, saveTotemPrefs, TOTEM_DEFAULTS, type TotemPrefs } from './core/totem';
 
@@ -29,21 +29,27 @@ export const app = $state({
 
 export const activeEvent = () => app.events.find((e) => e.id === app.activeId) ?? null;
 
+let routedAt = 0;
+
 export function go(route: Route, replace = false) {
   if (!replace) app.history.push(app.route);
   app.route = route;
+  routedAt = Date.now();
 }
 
 export function back(): boolean {
+  if (Date.now() - routedAt < 600) return true;
   const prev = app.history.pop();
   if (!prev) return false;
   app.route = prev;
+  routedAt = Date.now();
   return true;
 }
 
 export function home() {
   app.history = [];
   app.route = { name: 'events' };
+  routedAt = Date.now();
 }
 
 let toastSeq = 0;
@@ -88,10 +94,10 @@ export function newEventDraft(): BoothEvent {
     id: uid(),
     name: '',
     accent: '#FF5E1F',
-    format: 'tirinha',
+    format: DEFAULT_FORMAT,
     frame: null,
     frameName: null,
-    windows: defaultWindows('tirinha', 3),
+    windows: defaultWindows(DEFAULT_FORMAT, DEFAULT_FORMAT === 'tirinha' ? 3 : 1),
     filter: 'original',
     countdown: 3,
     groupTimer: 10,

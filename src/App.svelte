@@ -13,6 +13,11 @@
   import Gallery from './screens/Gallery.svelte';
   import Settings from './screens/Settings.svelte';
   import Toasts from './ui/Toasts.svelte';
+  import Icon from './ui/Icon.svelte';
+
+  function goBack() {
+    if (window.dispatchEvent(new CustomEvent('cabine:back', { cancelable: true }))) back();
+  }
 
   const accent = $derived(activeEvent()?.accent ?? '#FF5E1F');
   const media = window.matchMedia('(prefers-color-scheme: light)');
@@ -61,6 +66,9 @@
       <Diagnostics />
     {/if}
   {/if}
+  {#if TOTEM && app.ready && app.route.name !== 'booth' && app.history.length > 0}
+    <button class="totem-back" onclick={goBack}><Icon name="back" size={28} />Voltar</button>
+  {/if}
   <Toasts />
 </div>
 
@@ -69,5 +77,26 @@
     position: fixed;
     inset: 0;
     background: var(--graphite);
+  }
+  .root.lite :global(.screen) {
+    bottom: 18vh;
+  }
+  .totem-back {
+    position: fixed;
+    left: 50%;
+    bottom: 6vh;
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 64px;
+    padding: 0 32px 0 24px;
+    transform: translateX(-50%);
+    border-radius: 9999px;
+    background: var(--raised);
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--line);
+    font-size: 20px;
+    font-weight: 500;
   }
 </style>
