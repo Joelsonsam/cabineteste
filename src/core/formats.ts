@@ -4,7 +4,7 @@ export const DPI = 300;
 
 export const cmToPx = (cm: number) => Math.round((cm * DPI) / 2.54);
 
-export type FormatId = 'lembranca-retrato' | 'lembranca-paisagem' | 'tirinha' | 'polaroid' | 'feed';
+export type FormatId = 'lembranca-retrato' | 'lembranca-paisagem' | 'tirinha' | 'polaroid' | 'feed' | 'stories' | 'quadrada';
 
 export interface Rect {
   x: number;
@@ -68,12 +68,16 @@ export const FORMATS: Record<FormatId, FormatSpec> = {
   'lembranca-paisagem': spec('lembranca-paisagem', 'Foto lembrança', 'Horizontal, foto única', [15, 10], [15, 10], 1, 1),
   tirinha: spec('tirinha', 'Tirinha', 'Duas tiras por folha 10 × 15', [5, 15], [10, 15], 2, 4),
   polaroid: spec('polaroid', 'Polaroid', 'Foto única, duas por folha 15 × 10', [7.5, 10], [15, 10], 2, 1),
-  feed: spec('feed', 'Feed vertical', 'Foto digital 4:5, para celular e Instagram', [4, 5], [4, 5], 1, 4, [1080, 1350]),
+  feed: spec('feed', 'Feed vertical', 'Digital 4:5, post do Instagram', [4, 5], [4, 5], 1, 4, [1080, 1350]),
+  stories: spec('stories', 'Stories', 'Digital 9:16, tela cheia do celular', [9, 16], [9, 16], 1, 4, [1080, 1920]),
+  quadrada: spec('quadrada', 'Quadrada', 'Digital 1:1, feed e WhatsApp', [1, 1], [1, 1], 1, 4, [1080, 1080]),
 };
 
 export const PRINT_FORMATS: FormatId[] = ['lembranca-retrato', 'lembranca-paisagem', 'tirinha', 'polaroid'];
 
-export const FORMAT_ORDER: FormatId[] = TOTEM ? ['feed'] : PRINT_FORMATS;
+export const DIGITAL_FORMATS: FormatId[] = ['feed', 'stories', 'quadrada'];
+
+export const FORMAT_ORDER: FormatId[] = TOTEM ? [...DIGITAL_FORMATS, ...PRINT_FORMATS] : [...PRINT_FORMATS, ...DIGITAL_FORMATS];
 
 export const DEFAULT_FORMAT: FormatId = TOTEM ? 'feed' : 'tirinha';
 
