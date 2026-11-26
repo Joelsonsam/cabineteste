@@ -26,6 +26,17 @@ O build **APK Android** gera dois arquivos: `cabine-celular-apk` (operador com c
 - Área do operador: segure o canto superior esquerdo por 2 segundos e digite o PIN (padrão 1234).
 - Ajustes > Diagnóstico: testa o aparelho, a câmera e o tempo de montagem; o relatório pode ser enviado.
 
+## Estação de impressão (Windows)
+
+Programa para o notebook ligado na impressora (testado para DNP DS-RX1HS). O totem e os celulares Android mandam as fotos pela rede, sem cabo.
+
+1. Em Actions, abra a execução mais recente de "Estação de impressão (Windows)" e baixe o artefato `estacao-impressao-windows`.
+2. Abra `EstacaoImpressao.exe` no notebook. Na primeira vez, o Windows pergunta sobre o firewall: permita em redes privadas.
+3. Escolha a impressora da foto e, se quiser a tirinha cortada, uma cópia da DS-RX1HS com "2 inch cut" ativado.
+4. No app, em Ajustes > Estação de impressão, digite o endereço mostrado no topo da estação (ex.: `192.168.0.10:8787`).
+
+Não funciona no iPhone pelo app web: lá a impressão continua pela folha de compartilhar.
+
 ## iPhone (app web instalável)
 
 1. No repositório: *Settings > Pages > Build and deployment > Source*: **GitHub Actions**.

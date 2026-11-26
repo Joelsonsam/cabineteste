@@ -1,14 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { scale } from 'svelte/transition';
-  import { app, back, go, setSoundPref, setThemePref, setTotemPrefs, type ThemePref } from '../state.svelte';
+  import { app, back, go, setSoundPref, setStation, setThemePref, setTotemPrefs, type ThemePref } from '../state.svelte';
+  import { stationStatus, type StationStatus } from '../core/station';
   import { TOTEM } from '../target';
   import { listCameras, type CameraInfo } from '../core/camera';
   import type { Rotation, TotemPrefs } from '../core/totem';
   import Segmented from '../ui/Segmented.svelte';
   import { FORMATS, FORMAT_ORDER, formatSize, formatPx } from '../core/formats';
   import { formatBytes, vibrate } from '../core/util';
-  import { clearShareCache, isNative, storageEstimate } from '../platform';
+  import { clearShareCache, isIOS, isNative, storageEstimate } from '../platform';
   import Icon from '../ui/Icon.svelte';
   import Toggle from '../ui/Toggle.svelte';
 
@@ -59,6 +60,29 @@
     }
     if (pin !== app.totem.pin) setTotemPrefs({ pin });
   }
+
+  const stationAllowed = isNative || !isIOS;
+  let station = $state(app.station);
+  let stationInfo: StationStatus | null = $state(null);
+  let stationError = $state('');
+  let stationTesting = $state(false);
+  async function testStation() {
+    await setStation(station);
+    stationInfo = null;
+    stationError = '';
+    if (!app.station) return;
+    stationTesting = true;
+    try {
+      stationInfo = await stationStatus(app.station);
+    } catch (e) {
+      stationError = (e as Error).message;
+    } finally {
+      stationTesting = false;
+    }
+  }
+  onMount(() => {
+    if (app.station) testStation();
+  });
 
   let taps = $state(0);
   let credit = $state(false);
@@ -114,6 +138,22 @@
             <input class="input" inputmode="numeric" maxlength="6" bind:value={pin} onblur={savePin} />
           </label>
           <p class="muted small">Na tela do convidado, segure o canto superior esquerdo por 2 segundos para abrir a área do operador.</p>
+        </div>
+      {/if}
+
+      {#if stationAllowed}
+        <div class="block">
+          <h2 class="h">Estação de impressão</h2>
+          <p class="muted small">Notebook com Windows ligado na impressora, rodando o programa Estação de impressão. Deixe em branco para imprimir pelo Android.</p>
+          <div class="station-row">
+            <input class="input mono" placeholder="192.168.0.10:8787" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" bind:value={station} onkeydown={(e) => e.key === 'Enter' && testStation()} />
+            <button class="btn" onclick={testStation} disabled={stationTesting}>{stationTesting ? 'Testando' : app.station || station ? 'Salvar e testar' : 'Salvar'}</button>
+          </div>
+          {#if stationInfo}
+            <p class="station-ok small">Conectada. Foto: {stationInfo.foto || 'impressora não escolhida'}{stationInfo.tirinha && stationInfo.tirinha !== stationInfo.foto ? ` / Tirinha: ${stationInfo.tirinha}` : ''}. {stationInfo.folhas >= 0 ? `${stationInfo.folhas} folhas no rolo.` : ''}{stationInfo.pausada ? ' Impressões pausadas na estação.' : ''}</p>
+          {:else if stationError}
+            <p class="station-error small">{stationError}. Confira se o notebook está na mesma rede e com a estação aberta.</p>
+          {/if}
         </div>
       {/if}
 
@@ -190,6 +230,20 @@
     border-radius: var(--r-xs);
     background: var(--panel-solid);
     box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .station-row {
+    display: flex;
+    gap: 8px;
+  }
+  .station-row .input {
+    flex: 1;
+    min-width: 0;
+  }
+  .station-ok {
+    color: var(--ok, #1f9d63);
+  }
+  .station-error {
+    color: var(--danger, #e5484d);
   }
   .h {
     font-size: 18px;

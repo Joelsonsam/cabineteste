@@ -3,12 +3,13 @@
   import { fade, scale } from 'svelte/transition';
   import { activeEvent, app, go, home, toast } from '../state.svelte';
   import { Camera } from '../core/camera';
-  import { coverRect, exportSheet, printJob, renderUnit, thumbnail, type FilterId } from '../core/compose';
+  import { coverRect, exportSheet, renderUnit, thumbnail, type FilterId } from '../core/compose';
+  import { printOut, usesStation } from '../core/printing';
   import { db, sessionsFor, uid, type BoothSession, type CameraFacing } from '../core/db';
   import { FORMATS } from '../core/formats';
   import { shutter, tick } from '../core/sound';
   import { fileStamp, slug, vibrate } from '../core/util';
-  import { autoSaveSupported, onHardwareShutter, printSheet, saveToGallery, shareFile } from '../platform';
+  import { autoSaveSupported, onHardwareShutter, saveToGallery, shareFile } from '../platform';
   import Icon from '../ui/Icon.svelte';
   import UnitPreview from '../ui/UnitPreview.svelte';
   import Review from './Review.svelte';
@@ -291,12 +292,13 @@
   async function print() {
     if (!session) return;
     try {
-      const job = await printJob(session.sheet, ev.format);
-      await printSheet(job.blob, { widthCm: job.widthCm, heightCm: job.heightCm, jobName: fileName() });
+      if (usesStation()) toast('Enviando para a estação', 'info');
+      await printOut(session.sheet, ev.format, fileName());
       session.prints += 1;
       await db.sessions.update(session.id, { prints: session.prints });
-    } catch {
-      toast('A impressão não abriu. Confira se a impressora está ligada e pareada.', 'error', 3600);
+      if (usesStation()) toast('Impressão enviada');
+    } catch (e) {
+      toast(usesStation() ? `Estação: ${(e as Error).message}` : 'A impressão não abriu. Confira se a impressora está ligada e pareada.', 'error', 3600);
     }
   }
 

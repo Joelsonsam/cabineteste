@@ -23,6 +23,7 @@ export const app = $state({
   sound: true,
   theme: 'auto' as ThemePref,
   totem: { ...TOTEM_DEFAULTS } as TotemPrefs,
+  station: '',
   ready: false,
   toasts: [] as Toast[],
 });
@@ -68,6 +69,7 @@ export async function loadAll() {
   app.sound = await getSetting('sound', true);
   app.theme = await getSetting<ThemePref>('theme', 'auto');
   app.totem = await loadTotemPrefs();
+  app.station = await getSetting('station', '');
   setSound(app.sound);
   app.ready = true;
 }
@@ -81,6 +83,11 @@ export async function setSoundPref(on: boolean) {
   app.sound = on;
   setSound(on);
   await setSetting('sound', on);
+}
+
+export async function setStation(address: string) {
+  app.station = address.trim();
+  await setSetting('station', app.station);
 }
 
 export async function setThemePref(t: ThemePref) {

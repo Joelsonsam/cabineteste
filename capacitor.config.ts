@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   backgroundColor: '#17181c',
   android: {
-    allowMixedContent: false,
+    allowMixedContent: true,
     captureInput: true,
     webContentsDebuggingEnabled: true,
   },

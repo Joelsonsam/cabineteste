@@ -6,8 +6,8 @@
   import { clearSessions, db, sessionsFor, type BoothSession } from '../core/db';
   import { FORMATS } from '../core/formats';
   import { fileStamp, formatBytes, slug } from '../core/util';
-  import { printSheet, saveToGallery, shareFile } from '../platform';
-  import { printJob } from '../core/compose';
+  import { saveToGallery, shareFile } from '../platform';
+  import { printOut, usesStation } from '../core/printing';
   import Icon from '../ui/Icon.svelte';
   import HoldButton from '../ui/HoldButton.svelte';
 
@@ -68,12 +68,13 @@
 
   async function reprint(s: Item) {
     try {
-      const job = await printJob(s.sheet, ev.format);
-      await printSheet(job.blob, { widthCm: job.widthCm, heightCm: job.heightCm, jobName: name(s) });
+      if (usesStation()) toast('Enviando para a estação', 'info');
+      await printOut(s.sheet, ev.format, name(s));
       s.prints += 1;
       await db.sessions.update(s.id, { prints: s.prints });
-    } catch {
-      toast('A impressão não abriu. Confira a impressora.', 'error');
+      if (usesStation()) toast('Impressão enviada');
+    } catch (e) {
+      toast(usesStation() ? `Estação: ${(e as Error).message}` : 'A impressão não abriu. Confira a impressora.', 'error', 3600);
     }
   }
 

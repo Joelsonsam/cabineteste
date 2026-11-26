@@ -3,13 +3,15 @@
   import { fade } from 'svelte/transition';
   import { activeEvent, app, go, home, toast } from '../state.svelte';
   import { Camera, listCameras, preferExternal } from '../core/camera';
-  import { coverRect, exportSheet, printJob, renderUnit, thumbnail, FILTERS, type FilterId } from '../core/compose';
+  import { coverRect, exportSheet, renderUnit, thumbnail, FILTERS, type FilterId } from '../core/compose';
   import { db, uid, type BoothSession } from '../core/db';
   import { FORMATS } from '../core/formats';
   import { resolutionSize, rotateBitmap } from '../core/totem';
   import { shutter, tick } from '../core/sound';
   import { fileStamp, slug, vibrate } from '../core/util';
-  import { isNative, printSheet, saveToGallery } from '../platform';
+  import { isNative, saveToGallery } from '../platform';
+  import { printOut } from '../core/printing';
+  import type { StationJobState } from '../core/station';
   import UnitPreview from '../ui/UnitPreview.svelte';
   import PinPad from '../ui/PinPad.svelte';
   import Icon from '../ui/Icon.svelte';
@@ -31,6 +33,8 @@
   let session: BoothSession | null = $state(null);
   let doneUrl: string | null = $state(null);
   let printed = $state(false);
+  let printState: StationJobState | 'idle' = $state('idle');
+  let printAhead = $state(0);
   let pinOpen = $state(false);
   let menuOpen = $state(false);
 
@@ -69,6 +73,18 @@
     return `width:${w * k}px;height:${h * k}px`;
   });
   const canPrint = prefs.guestPrint;
+  const printBusy = $derived(printState === 'enviando' || printState === 'fila' || printState === 'imprimindo');
+  const printTitle = $derived(
+    printState === 'pronta'
+      ? 'Retire sua foto na impressora'
+      : printState === 'fila' && printAhead > 0
+        ? `Na fila, ${printAhead} antes da sua`
+        : printState === 'imprimindo'
+          ? 'Imprimindo sua foto'
+          : printState === 'enviando' || printState === 'fila'
+            ? 'Enviando para a impressora'
+            : 'Sua foto está pronta'
+  );
   const countdownSeconds = Math.max(3, ev.countdown || 3);
 
   async function startCamera() {
@@ -152,6 +168,7 @@
     filter = ev.filter;
     session = null;
     printed = false;
+    printState = 'idle';
     if (doneUrl) URL.revokeObjectURL(doneUrl);
     doneUrl = null;
     phase = 'attract';
@@ -262,14 +279,19 @@
   async function print() {
     if (!session || printed || !settled()) return;
     printed = true;
+    printState = 'enviando';
     try {
-      const job = await printJob(session.sheet, ev.format);
-      await printSheet(job.blob, { widthCm: job.widthCm, heightCm: job.heightCm, jobName: name() });
+      await printOut(session.sheet, ev.format, name(), (s, pos) => {
+        printState = s;
+        printAhead = pos ?? 0;
+        touch();
+      });
+      printState = 'pronta';
       session.prints += 1;
       await db.sessions.update(session.id, { prints: session.prints });
     } catch {
       printed = false;
-      toast('A impressão não abriu. Chame a equipe.', 'error', 3600);
+      printState = 'erro';
     }
   }
 
@@ -367,13 +389,16 @@
     </div>
   {:else if phase === 'done'}
     <div class="done" in:fade={{ duration: 200 }}>
-      <p class="title">{printed ? 'Retire sua foto na impressora' : 'Sua foto está pronta'}</p>
+      <p class="title">{printTitle}</p>
+      {#if printState === 'erro'}<p class="sub">A impressora não respondeu. Chame a equipe.</p>{/if}
       <div class="proof-wrap" bind:clientWidth={proofW} bind:clientHeight={proofH}>
         {#if doneUrl}<img class="final" src={doneUrl} alt="Sua foto" style={proofFit} />{/if}
       </div>
       <div class="actions">
         {#if canPrint}
-          <button class="big accent grow" onclick={print} disabled={printed}><Icon name={printed ? 'check' : 'print'} size={40} />{printed ? 'Enviada' : 'Imprimir'}</button>
+          <button class="big accent grow" onclick={print} disabled={printed}>
+            {#if printBusy}<span class="spinner small"></span>Imprimindo{:else if printState === 'pronta'}<Icon name="check" size={40} />Enviada{:else}<Icon name="print" size={40} />{printState === 'erro' ? 'Tentar de novo' : 'Imprimir'}{/if}
+          </button>
         {/if}
         <button class="big ghost" class:grow={!canPrint} onclick={leave}>Concluir</button>
       </div>
@@ -650,6 +675,12 @@
     font-size: 2em;
     font-weight: 500;
     letter-spacing: -0.02em;
+  }
+  .sub {
+    margin-top: 0.4em;
+    text-align: center;
+    color: #ff8a6a;
+    font-size: 1.1em;
   }
   .proof-wrap {
     flex: none;
