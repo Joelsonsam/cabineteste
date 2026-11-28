@@ -13,6 +13,7 @@
     onsave,
     onshare,
     onnext,
+    guestName = '',
   }: {
     ev: BoothEvent;
     session: BoothSession;
@@ -21,6 +22,7 @@
     onsave: () => void;
     onshare: () => void;
     onnext: () => void;
+    guestName?: string;
   } = $props();
 
   const spec = $derived(FORMATS[ev.format]);
@@ -50,6 +52,7 @@
       {/if}
     </figure>
     </div>
+    {#if guestName}<p class="guest">{guestName}</p>{/if}
     <p class="caption mono muted">
       Folha {spec.sheetCm[0]} × {spec.sheetCm[1]} cm{spec.copies === 2 ? ', corte no meio' : ''}
     </p>
@@ -98,6 +101,12 @@
     flex-direction: column;
     gap: 16px;
     padding: 16px 32px;
+  }
+  .guest {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
   }
   .sheet-fit {
     flex: 1;

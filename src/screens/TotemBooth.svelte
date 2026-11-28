@@ -11,6 +11,7 @@
   import { fileStamp, slug, vibrate } from '../core/util';
   import { isNative, saveToGallery } from '../platform';
   import { printOut } from '../core/printing';
+  import { activeLeadConfig, cleanLead, emptyLead, firstNameOf, formatPhone, isBlank, validateLead, type LeadErrors } from '../core/lead';
   import type { StationJobState } from '../core/station';
   import UnitPreview from '../ui/UnitPreview.svelte';
   import PinPad from '../ui/PinPad.svelte';
@@ -39,15 +40,11 @@
   let copiesOpen = $state(false);
   let copies = $state(1);
   const maxCopies = Math.max(1, ev.maxCopies ?? 1);
-  const leadCfg = ev.lead && ev.lead.mode !== 'off' && (ev.lead.name || ev.lead.phone || ev.lead.email || ev.lead.company) ? ev.lead : null;
-  const emptyLead = (): Lead => ({ name: '', phone: '', email: '', company: '', consent: false });
+  const leadCfg = activeLeadConfig(ev.lead);
   let lead: Lead = $state(emptyLead());
-  let leadErrors: Partial<Record<keyof Lead, string>> = $state({});
+  let leadErrors: LeadErrors = $state({});
   let guest: Lead | null = $state(null);
-  const firstName = $derived.by(() => {
-    const n = (guest?.name ?? '').trim().split(/\s+/)[0] ?? '';
-    return n ? n.charAt(0).toLocaleUpperCase('pt-BR') + n.slice(1).toLocaleLowerCase('pt-BR') : '';
-  });
+  const firstName = $derived(firstNameOf(guest));
   const overlay = !!(ev.liveFrame !== false && ev.frame && ev.windows.length === 1);
   const frameUrl = overlay && ev.frame ? URL.createObjectURL(ev.frame) : null;
   let menuOpen = $state(false);
@@ -221,38 +218,17 @@
     await startCamera();
   }
 
-  function formatPhone(v: string) {
-    const d = v.replace(/\D/g, '').slice(0, 11);
-    if (d.length <= 2) return d.length ? `(${d}` : '';
-    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  }
-
   function submitLead(skip = false) {
     if (!settled() || !leadCfg) return;
-    const typed = !!(lead.name.trim() || lead.phone.trim() || lead.email.trim() || lead.company.trim());
-    if (skip || (leadCfg.mode === 'optional' && !typed)) {
+    if (skip || (leadCfg.mode === 'optional' && isBlank(lead))) {
       guest = null;
       toCamera();
       return;
     }
-    const errs: Partial<Record<keyof Lead, string>> = {};
-    const required = leadCfg.mode === 'required';
-    if (leadCfg.name && (required || lead.name) && lead.name.trim().length < 2) errs.name = 'Digite seu nome';
-    if (leadCfg.phone && (required || lead.phone) && lead.phone.replace(/\D/g, '').length < 10) errs.phone = 'Telefone com DDD';
-    if (leadCfg.email && (required || lead.email) && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(lead.email.trim())) errs.email = 'E-mail incompleto';
-    if (leadCfg.company && required && !lead.company.trim()) errs.company = 'Digite a empresa';
-    if (!lead.consent) errs.consent = 'Marque a autorização para continuar';
+    const errs = validateLead(leadCfg, lead);
     leadErrors = errs;
     if (Object.keys(errs).length) return;
-    guest = {
-      name: lead.name.trim(),
-      phone: lead.phone.trim(),
-      email: lead.email.trim().toLowerCase(),
-      company: lead.company.trim(),
-      consent: true,
-    };
+    guest = cleanLead(lead);
     (document.activeElement as HTMLElement | null)?.blur();
     toCamera();
   }

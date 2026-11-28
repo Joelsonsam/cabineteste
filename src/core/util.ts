@@ -79,6 +79,29 @@ export const vibrate = (ms: number | number[]) => {
   }
 };
 
+export async function halvesMatch(blob: Blob): Promise<boolean> {
+  const bmp = await createImageBitmap(blob);
+  const W = 64;
+  const H = 96;
+  const c = document.createElement('canvas');
+  c.width = W * 2;
+  c.height = H;
+  const ctx = c.getContext('2d')!;
+  ctx.drawImage(bmp, 0, 0, bmp.width / 2, bmp.height, 0, 0, W, H);
+  ctx.drawImage(bmp, bmp.width / 2, 0, bmp.width / 2, bmp.height, W, 0, W, H);
+  bmp.close();
+  const d = ctx.getImageData(0, 0, W * 2, H).data;
+  let diff = 0;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const a = (y * W * 2 + x) * 4;
+      const b = a + W * 4;
+      diff += Math.abs(d[a] - d[b]) + Math.abs(d[a + 1] - d[b + 1]) + Math.abs(d[a + 2] - d[b + 2]) + Math.abs(d[a + 3] - d[b + 3]);
+    }
+  }
+  return diff / (W * H * 4) < 12;
+}
+
 export async function cropLeftHalf(blob: Blob, unitPx: [number, number]): Promise<Blob> {
   const bmp = await createImageBitmap(blob);
   const c = document.createElement('canvas');

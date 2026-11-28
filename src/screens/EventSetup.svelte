@@ -5,7 +5,7 @@
   import { TOTEM } from '../target';
   import { FILTERS } from '../core/compose';
   import { FORMATS, FORMAT_ORDER, defaultWindows, formatSize, formatPx, type FormatId } from '../core/formats';
-  import { ACCENTS, accentVars, analyzeFrame, cropLeftHalf } from '../core/util';
+  import { ACCENTS, accentVars, analyzeFrame, cropLeftHalf, halvesMatch } from '../core/util';
   import Icon from '../ui/Icon.svelte';
   import Segmented from '../ui/Segmented.svelte';
   import Toggle from '../ui/Toggle.svelte';
@@ -65,7 +65,8 @@
       const near = (a: number, b: number) => Math.abs(a - b) / b <= 0.02;
       const cur = FORMATS[ev.format];
       const unitRatio = (id: FormatId) => FORMATS[id].unitPx[0] / FORMATS[id].unitPx[1];
-      if (cur.copies === 2 && near(ratio, cur.sheetPx[0] / cur.sheetPx[1]) && !near(ratio, unitRatio(ev.format))) {
+      const duplicated = cur.copies === 2 && near(ratio, cur.sheetPx[0] / cur.sheetPx[1]) && !near(ratio, unitRatio(ev.format)) && (await halvesMatch(file));
+      if (duplicated) {
         frame = await cropLeftHalf(file, cur.unitPx);
         toast(`Arte com duas cópias detectada. Usando só uma ${cur.name.toLowerCase()}; o app duplica na impressão.`, 'info', 4200);
       } else if (!near(ratio, unitRatio(ev.format))) {
@@ -277,7 +278,7 @@
         </div>{/if}
       </div>
 
-      {#if TOTEM && ev.lead}
+      {#if ev.lead}
         <div class="group">
           <h2 class="title-lg">Cadastro do convidado</h2>
           <div class="field">
@@ -286,7 +287,7 @@
           </div>
           {#if ev.lead.mode !== 'off'}
             <div class="toggles" transition:slide={{ duration: 160 }}>
-              <Toggle bind:checked={ev.lead.name} label="Nome" hint="Usado também para chamar o convidado pelo nome" />
+              <Toggle bind:checked={ev.lead.name} label="Nome" hint={TOTEM ? "Usado também para chamar o convidado pelo nome" : undefined} />
               <Toggle bind:checked={ev.lead.phone} label="Telefone (WhatsApp)" />
               <Toggle bind:checked={ev.lead.email} label="E-mail" />
               <Toggle bind:checked={ev.lead.company} label="Empresa" />
@@ -299,13 +300,13 @@
         </div>
 
         <div class="group">
-          <h2 class="title-lg">Totem</h2>
+          <h2 class="title-lg">Impressão e prévia</h2>
           <div class="field">
-            <span>Cópias que o convidado pode pedir</span>
+            <span>{TOTEM ? 'Cópias que o convidado pode pedir' : 'Máximo de cópias por foto'}</span>
             <Segmented label="Cópias" bind:value={ev.maxCopies} options={[{ value: 1, label: '1' }, { value: 2, label: 'Até 2' }, { value: 3, label: 'Até 3' }]} />
           </div>
           <div class="toggles">
-            <Toggle bind:checked={ev.liveFrame} label="Moldura sobre a câmera" hint="O convidado vê a moldura ao vivo enquanto se posiciona" />
+            <Toggle bind:checked={ev.liveFrame} label="Moldura sobre a câmera" hint="Mostra a moldura ao vivo enquanto o convidado se posiciona, nos formatos de uma foto" />
           </div>
         </div>
       {/if}
