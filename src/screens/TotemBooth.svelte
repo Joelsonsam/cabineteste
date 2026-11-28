@@ -4,7 +4,7 @@
   import { activeEvent, app, go, home, toast } from '../state.svelte';
   import { Camera, listCameras, preferExternal } from '../core/camera';
   import { coverRect, exportSheet, renderUnit, thumbnail, FILTERS, type FilterId } from '../core/compose';
-  import { db, uid, type BoothSession } from '../core/db';
+  import { db, uid, type BoothSession, type Lead } from '../core/db';
   import { FORMATS } from '../core/formats';
   import { resolutionSize, rotateBitmap } from '../core/totem';
   import { shutter, tick } from '../core/sound';
@@ -20,7 +20,7 @@
   const spec = FORMATS[ev.format];
   const prefs = app.totem;
 
-  type Phase = 'attract' | 'live' | 'countdown' | 'review' | 'building' | 'done';
+  type Phase = 'attract' | 'lead' | 'live' | 'countdown' | 'review' | 'building' | 'done';
   let phase: Phase = $state('attract');
   let photos: (ImageBitmap | null)[] = $state(ev.windows.map(() => null));
   let current = $state(0);
@@ -36,6 +36,20 @@
   let printState: StationJobState | 'idle' = $state('idle');
   let printAhead = $state(0);
   let pinOpen = $state(false);
+  let copiesOpen = $state(false);
+  let copies = $state(1);
+  const maxCopies = Math.max(1, ev.maxCopies ?? 1);
+  const leadCfg = ev.lead && ev.lead.mode !== 'off' && (ev.lead.name || ev.lead.phone || ev.lead.email || ev.lead.company) ? ev.lead : null;
+  const emptyLead = (): Lead => ({ name: '', phone: '', email: '', company: '', consent: false });
+  let lead: Lead = $state(emptyLead());
+  let leadErrors: Partial<Record<keyof Lead, string>> = $state({});
+  let guest: Lead | null = $state(null);
+  const firstName = $derived.by(() => {
+    const n = (guest?.name ?? '').trim().split(/\s+/)[0] ?? '';
+    return n ? n.charAt(0).toLocaleUpperCase('pt-BR') + n.slice(1).toLocaleLowerCase('pt-BR') : '';
+  });
+  const overlay = !!(ev.liveFrame !== false && ev.frame && ev.windows.length === 1);
+  const frameUrl = overlay && ev.frame ? URL.createObjectURL(ev.frame) : null;
   let menuOpen = $state(false);
 
   let video: HTMLVideoElement;
@@ -56,14 +70,20 @@
   const win = $derived(ev.windows[current] ?? ev.windows[0]);
   const stage = $derived.by(() => {
     if (!areaW || !areaH || !win) return { w: 0, h: 0 };
-    const ratio = win.w / win.h;
+    const ratio = overlay ? spec.unitPx[0] / spec.unitPx[1] : win.w / win.h;
     return areaW / areaH > ratio ? { w: areaH * ratio, h: areaH } : { w: areaW, h: areaW / ratio };
+  });
+  const box = $derived.by(() => {
+    if (!overlay || !win) return { x: 0, y: 0, w: stage.w, h: stage.h };
+    const kx = stage.w / spec.unitPx[0];
+    const ky = stage.h / spec.unitPx[1];
+    return { x: win.x * kx, y: win.y * ky, w: win.w * kx, h: win.h * ky };
   });
   const swap = prefs.rotation === 90 || prefs.rotation === 270;
   const videoStyle = $derived.by(() => {
-    const w = swap ? stage.h : stage.w;
-    const h = swap ? stage.w : stage.h;
-    return `width:${w}px;height:${h}px;left:${(stage.w - w) / 2}px;top:${(stage.h - h) / 2}px;transform:${prefs.mirror ? 'scaleX(-1) ' : ''}rotate(${prefs.rotation}deg)`;
+    const w = swap ? box.h : box.w;
+    const h = swap ? box.w : box.h;
+    return `width:${w}px;height:${h}px;left:${(box.w - w) / 2}px;top:${(box.h - h) / 2}px;transform:${prefs.mirror ? 'scaleX(-1) ' : ''}rotate(${prefs.rotation}deg)`;
   });
   let proofW = $state(0);
   let proofH = $state(0);
@@ -83,7 +103,9 @@
           ? 'Imprimindo sua foto'
           : printState === 'enviando' || printState === 'fila'
             ? 'Enviando para a impressora'
-            : 'Sua foto está pronta'
+            : firstName
+              ? `Ficou ótima, ${firstName}!`
+              : 'Sua foto está pronta'
   );
   const countdownSeconds = Math.max(3, ev.countdown || 3);
 
@@ -111,6 +133,7 @@
     const idle = (Date.now() - lastTouch) / 1000;
     if (pinOpen || menuOpen) return;
     if ((phase === 'live' || phase === 'review') && idle > prefs.idleSeconds) toAttract();
+    if (phase === 'lead' && idle > prefs.idleSeconds + 40) toAttract();
     if (phase === 'live' && cameraError && idle > 15) toAttract();
     if (phase === 'done' && idle > Math.min(25, prefs.idleSeconds)) toAttract();
   }
@@ -118,6 +141,7 @@
   onMount(() => {
     if (ev.frame) createImageBitmap(ev.frame).then((b) => (frameBmp = b));
     window.addEventListener('pointerdown', touch, true);
+    window.addEventListener('keydown', touch, true);
     idleTimer = window.setInterval(checkIdle, 1000);
     const onBack = (e: Event) => e.preventDefault();
     window.addEventListener('cabine:back', onBack);
@@ -132,6 +156,7 @@
     document.addEventListener('visibilitychange', vis);
     return () => {
       window.removeEventListener('pointerdown', touch, true);
+      window.removeEventListener('keydown', touch, true);
       window.removeEventListener('cabine:back', onBack);
       document.removeEventListener('visibilitychange', vis);
       clearInterval(idleTimer);
@@ -143,6 +168,7 @@
     camera.stop();
     photos.forEach((p) => p?.close());
     frameBmp?.close();
+    if (frameUrl) URL.revokeObjectURL(frameUrl);
     if (doneUrl) URL.revokeObjectURL(doneUrl);
   });
 
@@ -169,6 +195,11 @@
     session = null;
     printed = false;
     printState = 'idle';
+    copiesOpen = false;
+    copies = 1;
+    lead = emptyLead();
+    leadErrors = {};
+    guest = null;
     if (doneUrl) URL.revokeObjectURL(doneUrl);
     doneUrl = null;
     phase = 'attract';
@@ -177,9 +208,53 @@
   async function begin() {
     if (!settled()) return;
     touch();
+    if (leadCfg) {
+      phase = 'lead';
+      return;
+    }
+    await toCamera();
+  }
+
+  async function toCamera() {
     phase = 'live';
     await nextTick();
     await startCamera();
+  }
+
+  function formatPhone(v: string) {
+    const d = v.replace(/\D/g, '').slice(0, 11);
+    if (d.length <= 2) return d.length ? `(${d}` : '';
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  }
+
+  function submitLead(skip = false) {
+    if (!settled() || !leadCfg) return;
+    const typed = !!(lead.name.trim() || lead.phone.trim() || lead.email.trim() || lead.company.trim());
+    if (skip || (leadCfg.mode === 'optional' && !typed)) {
+      guest = null;
+      toCamera();
+      return;
+    }
+    const errs: Partial<Record<keyof Lead, string>> = {};
+    const required = leadCfg.mode === 'required';
+    if (leadCfg.name && (required || lead.name) && lead.name.trim().length < 2) errs.name = 'Digite seu nome';
+    if (leadCfg.phone && (required || lead.phone) && lead.phone.replace(/\D/g, '').length < 10) errs.phone = 'Telefone com DDD';
+    if (leadCfg.email && (required || lead.email) && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(lead.email.trim())) errs.email = 'E-mail incompleto';
+    if (leadCfg.company && required && !lead.company.trim()) errs.company = 'Digite a empresa';
+    if (!lead.consent) errs.consent = 'Marque a autorização para continuar';
+    leadErrors = errs;
+    if (Object.keys(errs).length) return;
+    guest = {
+      name: lead.name.trim(),
+      phone: lead.phone.trim(),
+      email: lead.email.trim().toLowerCase(),
+      company: lead.company.trim(),
+      consent: true,
+    };
+    (document.activeElement as HTMLElement | null)?.blur();
+    toCamera();
   }
 
   async function crop(bmp: ImageBitmap, index: number): Promise<ImageBitmap> {
@@ -258,6 +333,7 @@
         thumb,
         prints: 0,
         savedToGallery: false,
+        ...(guest ? { lead: { ...guest } } : {}),
       };
       await db.sessions.add(s);
       session = s;
@@ -276,18 +352,31 @@
     }
   }
 
-  async function print() {
+  function askPrint() {
     if (!session || printed || !settled()) return;
+    if (maxCopies > 1) {
+      copies = 1;
+      copiesOpen = true;
+      return;
+    }
+    print(1);
+  }
+
+  async function print(n: number) {
+    if (!session || printed) return;
+    copiesOpen = false;
     printed = true;
     printState = 'enviando';
     try {
-      await printOut(session.sheet, ev.format, name(), (s, pos) => {
-        printState = s;
-        printAhead = pos ?? 0;
-        touch();
-      });
+      for (let i = 0; i < n; i++) {
+        await printOut(session.sheet, ev.format, n > 1 ? name().replace('.jpg', `-${i + 1}.jpg`) : name(), (s, pos) => {
+          printState = s === 'pronta' && i < n - 1 ? 'imprimindo' : s;
+          printAhead = pos ?? 0;
+          touch();
+        });
+      }
       printState = 'pronta';
-      session.prints += 1;
+      session.prints += n;
       await db.sessions.update(session.id, { prints: session.prints });
     } catch {
       printed = false;
@@ -327,6 +416,54 @@
       <span class="cta"><span class="dot"></span>Toque para tirar sua foto</span>
       <span class="hint">{ev.windows.length === 1 ? 'Uma foto' : `${ev.windows.length} poses`}, {spec.name.toLowerCase()}</span>
     </button>
+  {:else if phase === 'lead' && leadCfg}
+    <form class="lead" in:fade={{ duration: 180 }} onsubmit={(e) => { e.preventDefault(); submitLead(); }} novalidate>
+      <p class="title">Antes da foto</p>
+      <p class="lead-sub">{leadCfg.mode === 'required' ? 'Preencha seus dados para continuar.' : 'Se quiser, deixe seus dados. Dá para pular.'}</p>
+      <div class="fields">
+        {#if leadCfg.name}
+          <label class="lf" class:bad={leadErrors.name}>
+            <span>Nome</span>
+            <input bind:value={lead.name} autocomplete="name" autocapitalize="words" enterkeyhint="next" />
+            {#if leadErrors.name}<em>{leadErrors.name}</em>{/if}
+          </label>
+        {/if}
+        {#if leadCfg.phone}
+          <label class="lf" class:bad={leadErrors.phone}>
+            <span>Telefone (WhatsApp)</span>
+            <input value={lead.phone} oninput={(e) => { lead.phone = formatPhone(e.currentTarget.value); e.currentTarget.value = lead.phone; }} type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="next" />
+            {#if leadErrors.phone}<em>{leadErrors.phone}</em>{/if}
+          </label>
+        {/if}
+        {#if leadCfg.email}
+          <label class="lf" class:bad={leadErrors.email}>
+            <span>E-mail</span>
+            <input bind:value={lead.email} type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="next" />
+            {#if leadErrors.email}<em>{leadErrors.email}</em>{/if}
+          </label>
+        {/if}
+        {#if leadCfg.company}
+          <label class="lf" class:bad={leadErrors.company}>
+            <span>Empresa</span>
+            <input bind:value={lead.company} autocomplete="organization" enterkeyhint="done" />
+            {#if leadErrors.company}<em>{leadErrors.company}</em>{/if}
+          </label>
+        {/if}
+        <label class="consent" class:bad={leadErrors.consent}>
+          <input type="checkbox" bind:checked={lead.consent} />
+          <span class="box"><Icon name="check" size={28} stroke={3} /></span>
+          <span class="consent-text">{leadCfg.consent}{#if leadErrors.consent}<em>{leadErrors.consent}</em>{/if}</span>
+        </label>
+      </div>
+      <div class="actions">
+        {#if leadCfg.mode === 'optional'}
+          <button type="button" class="big ghost" onclick={() => submitLead(true)}>Pular</button>
+        {:else}
+          <button type="button" class="big ghost" onclick={leave}><Icon name="back" size={36} />Voltar</button>
+        {/if}
+        <button type="submit" class="big accent grow"><Icon name="camera" size={40} />Ir para a foto</button>
+      </div>
+    </form>
   {:else if phase === 'live' || phase === 'countdown'}
     <div class="capture">
       <div class="head">
@@ -336,13 +473,16 @@
           </div>
           <p>Pose {current + 1} de {ev.windows.length}</p>
         {:else}
-          <p>Ajuste-se no quadro</p>
+          <p>{firstName ? `${firstName}, ajuste-se no quadro` : 'Ajuste-se no quadro'}</p>
         {/if}
       </div>
       <div class="area" bind:clientWidth={areaW} bind:clientHeight={areaH}>
-        <div class="stage" class:counting={phase === 'countdown'} style="width:{stage.w}px;height:{stage.h}px">
-          <!-- svelte-ignore a11y_media_has_caption -->
-          <video bind:this={video} style={videoStyle} playsinline muted autoplay></video>
+        <div class="stage" class:counting={phase === 'countdown'} class:overlay style="width:{stage.w}px;height:{stage.h}px">
+          <div class="win" style="left:{box.x}px;top:{box.y}px;width:{box.w}px;height:{box.h}px">
+            <!-- svelte-ignore a11y_media_has_caption -->
+            <video bind:this={video} style={videoStyle} playsinline muted autoplay></video>
+          </div>
+          {#if frameUrl}<img class="live-frame" src={frameUrl} alt="" />{/if}
           {#if cameraError}
             <div class="msg"><Icon name="alert" size={48} /><p>A câmera não respondeu. Chame a equipe.</p><p class="detail">{cameraError}</p><button class="big ghost" onclick={startCamera}>Tentar de novo</button></div>
           {:else if !cameraReady}
@@ -367,7 +507,7 @@
     </div>
   {:else if phase === 'review' || phase === 'building'}
     <div class="review" in:fade={{ duration: 150 }}>
-      <p class="title">Ficou boa?</p>
+      <p class="title">{firstName ? `Ficou boa, ${firstName}?` : 'Ficou boa?'}</p>
       <div class="proof-wrap" bind:clientWidth={proofW} bind:clientHeight={proofH}>
         <div class="proof" style={proofFit}>
           <UnitPreview class="proof-canvas" format={ev.format} windows={ev.windows} frame={ev.frame} {photos} {filter} eventName={ev.name} accent={ev.accent} resolution={0.5} numbers={false} />
@@ -396,7 +536,7 @@
       </div>
       <div class="actions">
         {#if canPrint}
-          <button class="big accent grow" onclick={print} disabled={printed}>
+          <button class="big accent grow" onclick={askPrint} disabled={printed}>
             {#if printBusy}<span class="spinner small"></span>Imprimindo{:else if printState === 'pronta'}<Icon name="check" size={40} />Enviada{:else}<Icon name="print" size={40} />{printState === 'erro' ? 'Tentar de novo' : 'Imprimir'}{/if}
           </button>
         {/if}
@@ -406,6 +546,22 @@
   {/if}
 
   {#if phase !== 'attract'}<p class="foot">{ev.name}</p>{/if}
+
+  {#if copiesOpen}
+    <div class="menu-scrim" transition:fade={{ duration: 150 }}>
+      <div class="menu copies">
+        <p class="title">Quantas cópias?</p>
+        <div class="stepper">
+          <button class="step" onclick={() => (copies = Math.max(1, copies - 1))} disabled={copies <= 1} aria-label="Menos uma">−</button>
+          <span class="num">{copies}</span>
+          <button class="step" onclick={() => (copies = Math.min(maxCopies, copies + 1))} disabled={copies >= maxCopies} aria-label="Mais uma">+</button>
+        </div>
+        <p class="lead-sub">Até {maxCopies} por foto</p>
+        <button class="big accent" onclick={() => print(copies)}><Icon name="print" size={36} />Imprimir {copies} {copies === 1 ? 'cópia' : 'cópias'}</button>
+        <button class="big ghost" onclick={() => (copiesOpen = false)}>Voltar</button>
+      </div>
+    </div>
+  {/if}
 
   {#if pinOpen}
     <PinPad pin={prefs.pin} oncancel={() => (pinOpen = false)} onsuccess={() => { pinOpen = false; menuOpen = true; }} />
@@ -762,5 +918,153 @@
   }
   .menu .title {
     margin-bottom: 0.5em;
+  }
+  .stage.overlay {
+    background: transparent;
+    border-radius: 0.4em;
+  }
+  .win {
+    position: absolute;
+    overflow: hidden;
+    background: #000;
+  }
+  .live-frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .lead {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 6vh 1.5em 0;
+    overflow-y: auto;
+  }
+  .lead-sub {
+    margin-top: 0.4em;
+    text-align: center;
+    color: #a3a3a3;
+    font-size: 1.1em;
+  }
+  .fields {
+    display: grid;
+    grid-gap: 1.1em;
+    gap: 1.1em;
+    margin: 4vh 0 3vh;
+  }
+  .lf {
+    display: grid;
+    grid-gap: 0.4em;
+    gap: 0.4em;
+  }
+  .lf span {
+    color: #c9c9c9;
+    font-size: 1em;
+  }
+  .lf input {
+    width: 100%;
+    height: 3em;
+    padding: 0 0.8em;
+    border-radius: 0.6em;
+    border: 2px solid #3a3a3a;
+    background: #1d1d1d;
+    color: #fff;
+    font: inherit;
+    font-size: 1.35em;
+    outline: none;
+  }
+  .lf input:focus {
+    border-color: var(--accent);
+  }
+  .lf em,
+  .consent em {
+    display: block;
+    color: #ff8a6a;
+    font-style: normal;
+    font-size: 0.9em;
+  }
+  .lf.bad input {
+    border-color: #ff6a4a;
+  }
+  .consent {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8em;
+    padding-top: 0.4em;
+    color: #c9c9c9;
+    font-size: 1em;
+    line-height: 1.4;
+  }
+  .consent input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+  .consent .box {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.2em;
+    height: 2.2em;
+    border-radius: 0.5em;
+    border: 2px solid #5a5a5a;
+    color: transparent;
+  }
+  .consent .box :global(svg) {
+    width: 1.4em;
+    height: 1.4em;
+  }
+  .consent input:checked + .box {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+  .consent input:focus-visible + .box {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+  .consent.bad .box {
+    border-color: #ff6a4a;
+  }
+  .lead .actions {
+    margin-bottom: 4vh;
+  }
+  .copies {
+    justify-items: center;
+  }
+  .copies .big {
+    width: 100%;
+  }
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 1.4em;
+  }
+  .step {
+    width: 3.6em;
+    height: 3.6em;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3);
+    font-size: 1.6em;
+    line-height: 1;
+  }
+  .step:disabled {
+    opacity: 0.3;
+  }
+  .num {
+    min-width: 2ch;
+    text-align: center;
+    font-size: 4em;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 </style>

@@ -4,6 +4,31 @@ import type { FormatId, Rect } from './formats';
 
 export type CameraFacing = 'environment' | 'user';
 
+export type LeadMode = 'off' | 'optional' | 'required';
+
+export interface LeadConfig {
+  mode: LeadMode;
+  name: boolean;
+  phone: boolean;
+  email: boolean;
+  company: boolean;
+  consent: string;
+}
+
+export interface Lead {
+  name: string;
+  phone: string;
+  email: string;
+  company: string;
+  consent: boolean;
+}
+
+export const DEFAULT_CONSENT = 'Autorizo o uso dos meus dados para contato e o uso da minha foto pela marca do evento, conforme a LGPD.';
+
+export function defaultLead(): LeadConfig {
+  return { mode: 'off', name: true, phone: true, email: true, company: false, consent: DEFAULT_CONSENT };
+}
+
 export interface BoothEvent {
   id: string;
   name: string;
@@ -19,6 +44,9 @@ export interface BoothEvent {
   autoSave: boolean;
   camera: CameraFacing;
   mirrorPreview: boolean;
+  lead?: LeadConfig;
+  maxCopies?: number;
+  liveFrame?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -32,6 +60,7 @@ export interface BoothSession {
   thumb: Blob;
   prints: number;
   savedToGallery: boolean;
+  lead?: Lead;
 }
 
 export interface Setting {

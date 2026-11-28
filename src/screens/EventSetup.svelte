@@ -1,7 +1,8 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import { app, back, go, newEventDraft, saveEvent, setActive, toast, home } from '../state.svelte';
-  import { deleteEvent, type BoothEvent } from '../core/db';
+  import { defaultLead, deleteEvent, type BoothEvent } from '../core/db';
+  import { TOTEM } from '../target';
   import { FILTERS } from '../core/compose';
   import { FORMATS, FORMAT_ORDER, defaultWindows, formatSize, formatPx, type FormatId } from '../core/formats';
   import { ACCENTS, accentVars, analyzeFrame, cropLeftHalf } from '../core/util';
@@ -18,6 +19,9 @@
   const existing = app.events.find((e) => e.id === id);
   let ev: BoothEvent = $state(existing ? { ...existing, windows: existing.windows.map((w) => ({ ...w })) } : newEventDraft());
   const isNew = !existing;
+  if (!ev.lead) ev.lead = defaultLead();
+  if (!ev.maxCopies) ev.maxCopies = 1;
+  if (ev.liveFrame === undefined) ev.liveFrame = true;
 
   const spec = $derived(FORMATS[ev.format]);
   let report: Awaited<ReturnType<typeof analyzeFrame>> | null = $state(null);
@@ -272,6 +276,39 @@
           <Toggle bind:checked={ev.autoSave} label="Salvar na galeria ao aprovar" hint="Cada folha aprovada vai para o álbum Cabine Mude" />
         </div>{/if}
       </div>
+
+      {#if TOTEM && ev.lead}
+        <div class="group">
+          <h2 class="title-lg">Cadastro do convidado</h2>
+          <div class="field">
+            <span>Antes da foto</span>
+            <Segmented label="Cadastro" bind:value={ev.lead.mode} options={[{ value: 'off', label: 'Sem cadastro' }, { value: 'optional', label: 'Pode pular' }, { value: 'required', label: 'Obrigatório' }]} />
+          </div>
+          {#if ev.lead.mode !== 'off'}
+            <div class="toggles" transition:slide={{ duration: 160 }}>
+              <Toggle bind:checked={ev.lead.name} label="Nome" hint="Usado também para chamar o convidado pelo nome" />
+              <Toggle bind:checked={ev.lead.phone} label="Telefone (WhatsApp)" />
+              <Toggle bind:checked={ev.lead.email} label="E-mail" />
+              <Toggle bind:checked={ev.lead.company} label="Empresa" />
+            </div>
+            <label class="field" transition:slide={{ duration: 160 }}>
+              <span>Texto de autorização (LGPD)</span>
+              <textarea class="input" rows="3" bind:value={ev.lead.consent}></textarea>
+            </label>
+          {/if}
+        </div>
+
+        <div class="group">
+          <h2 class="title-lg">Totem</h2>
+          <div class="field">
+            <span>Cópias que o convidado pode pedir</span>
+            <Segmented label="Cópias" bind:value={ev.maxCopies} options={[{ value: 1, label: '1' }, { value: 2, label: 'Até 2' }, { value: 3, label: 'Até 3' }]} />
+          </div>
+          <div class="toggles">
+            <Toggle bind:checked={ev.liveFrame} label="Moldura sobre a câmera" hint="O convidado vê a moldura ao vivo enquanto se posiciona" />
+          </div>
+        </div>
+      {/if}
 
       {#if !isNew}
         <div class="danger">

@@ -132,6 +132,25 @@
     }
   }
 
+  const leads = $derived(items.filter((i) => i.lead));
+
+  async function exportLeads() {
+    menu = false;
+    const esc = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`;
+    const rows = [['Data', 'Hora', 'Nome', 'Telefone', 'E-mail', 'Empresa', 'Autorizou', 'Impressões', 'Arquivo']];
+    for (const s of [...leads].reverse()) {
+      const d = new Date(s.createdAt);
+      const l = s.lead!;
+      rows.push([d.toLocaleDateString('pt-BR'), d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), l.name, l.phone, l.email, l.company, l.consent ? 'Sim' : 'Não', String(s.prints), name(s)]);
+    }
+    const csv = '\ufeff' + rows.map((r) => r.map(esc).join(';')).join('\r\n');
+    try {
+      await shareFile(new Blob([csv], { type: 'text/csv' }), `${slug(ev.name)}-cadastros-${fileStamp()}.csv`, `${ev.name}: ${leads.length} cadastros`);
+    } catch {
+      toast('Não foi possível exportar os cadastros.', 'error');
+    }
+  }
+
   async function clearAll() {
     menu = false;
     await clearSessions(ev.id);
@@ -214,6 +233,10 @@
     <div class="detail menu bottom-sheet" transition:fly={{ y: 60, duration: 300 }}>
       <button class="btn wide" onclick={exportZip}><Icon name="archive" size={20} />Exportar tudo em ZIP</button>
       <p class="muted small">Gera um arquivo com as {items.length} folhas em 300 dpi para enviar ao Drive, WhatsApp ou e-mail.</p>
+      {#if leads.length}
+        <button class="btn wide" onclick={exportLeads}><Icon name="share" size={20} />Exportar {leads.length} {leads.length === 1 ? 'cadastro' : 'cadastros'} (planilha)</button>
+        <p class="muted small">Arquivo CSV que abre no Excel e no Google Planilhas.</p>
+      {/if}
       <HoldButton onconfirm={clearAll} hint="Segure para limpar"><Icon name="trash" size={20} />Limpar galeria do evento</HoldButton>
     </div>
   {/if}

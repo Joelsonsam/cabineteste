@@ -260,6 +260,13 @@ h3 {
   transition: border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
 }
 
+textarea.input {
+  padding: 14px 16px;
+  line-height: 1.4;
+  resize: vertical;
+  font-size: 16px;
+}
+
 .input::placeholder {
   color: var(--faint);
 }

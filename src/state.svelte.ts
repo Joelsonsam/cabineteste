@@ -1,4 +1,4 @@
-import { db, getSetting, setSetting, uid, type BoothEvent } from './core/db';
+import { db, defaultLead, getSetting, setSetting, uid, type BoothEvent } from './core/db';
 import { DEFAULT_FORMAT, defaultWindows } from './core/formats';
 import { setSound } from './core/sound';
 import { loadTotemPrefs, saveTotemPrefs, TOTEM_DEFAULTS, type TotemPrefs } from './core/totem';
@@ -112,6 +112,9 @@ export function newEventDraft(): BoothEvent {
     autoSave: true,
     camera: 'environment',
     mirrorPreview: true,
+    lead: defaultLead(),
+    maxCopies: 1,
+    liveFrame: true,
     createdAt: now,
     updatedAt: now,
   };
